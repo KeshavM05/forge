@@ -1,0 +1,244 @@
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+
+\begin{center}
+    \textbf{\Huge \scshape Keshav Mehndiratta} \\ \vspace{1pt}
+    \small +1(343)333-7585 $|$ \href{mailto:keshav.m@queensu.ca}{\underline{keshav.m@queensu.ca}} $|$
+    \href{https://www.linkedin.com/in/keshav-mehndiratta}{\underline{linkedin.com/in/keshav-mehndiratta}} $|$
+    \href{https://www.keshavhq.com}{\underline{keshavhq.com}} $|$
+    \href{https://github.com/KeshavM05}{\underline{github.com/KeshavM05}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+  {Queen's University}{Kingston, Ontario}
+  {Bachelor of Applied Science, Mechatronics \& Robotics Engineering}{}
+  \resumeItemListStart
+    \resumeItem{\textbf{Y Combinator AI Startup School (Summer 2025)}: Hand-picked as one of \textbf{2,500 top technical students} globally to attend YC's inaugural AI summit in San Francisco}
+  \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+    {Software Engineer}{May 2026 -- Present}
+    {Nokia}{Toronto, Ontario}
+    \resumeItemListStart
+        \resumeItem{Reduced telecom acceptance testing time from \textbf{two hours to two minutes} by engineering \textbf{Python} automation playbooks for AT\&T and T-Mobile cloud infrastructures across \textbf{scalable, distributed Linux} network systems.}
+        \resumeItem{Architected a \textbf{zero-touch LLM generation pipeline} for telecom workflows, enforcing \textbf{schema-pinned JSON guardrails} and deterministic exit sentinels to prevent AI hallucinations across complex \textbf{Unix infrastructures}.}
+        \resumeItem{Automated T-Mobile CloudHSS network health validations by deploying \textbf{21+ Python playbooks} to monitor \textbf{Kubernetes pod readiness} and enforce strict sentinel-based pass/fail logic, \textbf{eliminating false positives}.}
+        \resumeItem{Architected a \textbf{four-tiered Python testing pipeline}, using dynamic Keycloak tokens and \textbf{server-sent event streams} to parse \textbf{in-memory AES logs} and optimize job execution for massive enterprise cloud platforms.}
+    \resumeItemListEnd
+
+    \resumeSubheading
+      {Founder}{February 2026 -- May 2026}
+      {EasyClips}{Kingston, Ontario}
+      \resumeItemListStart
+        \resumeItem{Identified a critical bottleneck in creator workflows and launched an automated video clipping platform, scaling to \textbf{5,000+ active users} over \textbf{4 months} and generating \textbf{\$600+ in MRR} through rapid product iterations}
+        \resumeItem{Established an \textbf{Enterprise Partnership with Mosaic (YC W25)} to handle core video infrastructure, focusing internal resources on product strategy, user-feedback loops, and high-velocity feature prioritization}
+        \resumeItem{Engineered a scalable organic distribution funnel via short-form social media platforms (\textbf{@easyclips\_io}), amassing \textbf{600K+ organic views} and driving high-converting user acquisition with zero direct marketing cost}
+        \resumeItem{Directed our end-to-end product strategy by translating core user pain points into technical architectures, optimizing system performance, and continuously shipping updates to maintain a competitive market edge}
+      \resumeItemListEnd
+
+      \resumeSubheading
+      {Co-founder and CTO}{September 2025 --  February 2026}
+      {Qrush AI}{Kingston, Ontario}
+      \resumeItemListStart
+        \resumeItem{Architected a \textbf{scalable serverless infrastructure} on AWS App Runner and Neon (Postgres), implementing \textbf{Row-Level Security} to ensure strict data isolation and \textbf{auto-scaling} to support potential viral traffic spikes}
+        \resumeItem{Engineered an Agentic AI matchmaking engine by integrating \textbf{AWS Bedrock LLMs}, utilizing \textbf{Generative AI} to perform \textbf{semantic analysis} on user profiles and automate matchmaking logistics to eliminate human intervention}
+        \resumeItem{Developed a high-performance PWA using React, TypeScript, and \textbf{TanStack Query}, implementing \textbf{optimistic UI updates} to eliminate loading states and ensure a \textbf{zero-latency} profile experience for mobile users}
+        \resumeItem{Orchestrated \textbf{20+ automation workflows} using \textbf{n8n} and \textbf{AWS SES} to manage user lifecycles, executing a viral organic content strategy that secured \textbf{200+ verified beta signups} pre-launch with \textbf{\$0 marketing spend}}
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Computer Vision Team Lead}{August 2024 -- May 2025}
+      {Queen's Aerospace Design Team}{Kingston, Ontario}
+      \resumeItemListStart
+        \resumeItem{Engineered a \textbf{closed-loop} vision landing system using \textbf{OpenCV} and \textbf{ROS2}, implementing \textbf{active stabilization} and \textbf{PID control} to achieve \textbf{10cm precision} during water collection, even under \textbf{high wind disturbances}}
+        \resumeItem{Designed and deployed a \textbf{YOLOv8 + ROS2} computer vision pipeline on a fixed-wing UAV to autonomously detect wildfire targets, achieving \textbf{85\% detection accuracy} under varying flight conditions in system simulations}
+        \resumeItem{\textbf{Mentored 15+ engineers} on Python, ROS2, and Linux workflows, reducing new member onboarding time by \textbf{50\% (4 weeks to 2 weeks)} through the creation of structured training documentation and hands-on workshops}
+        \resumeItem{Led perception development for \textbf{2 competitive UAVs}, integrating software subsystems with custom hardware architectures to ensure reliable autonomous navigation and wildfire mapping for the AEAC competition}
+    \resumeItemListEnd
+
+    \resumeSubheading
+      {Full-Stack Developer}{July 2024 -- September 2024}
+      {Supply Chain Illuminations}{Remote, USA}
+      \resumeItemListStart
+        \resumeItem{Modernized the ASSURIoT platform by upgrading legacy Angular components, implementing \textbf{lazy loading} and \textbf{code-splitting} to optimize large bundle sizes and accelerate dashboard rendering speeds for \textbf{enterprise clients}}
+        \resumeItem{Engineered interactive data visualization dashboards using Angular and \textbf{REST APIs}, transforming raw telemetry into actionable insights to enable \textbf{real-time operational monitoring} capabilities for administrative users}
+        \resumeItem{Refactored the codebase to enforce \textbf{strict TypeScript} typing and reusable patterns, eliminating runtime errors and standardizing API integration workflows to accelerate feature delivery for the engineering team}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{EasyClips} $|$ \emph{\href{https://github.com/KeshavM05/EasyClips}{Link}}}{February 2026 -- May 2026}
+          \resumeItemListStart
+            \resumeItem{Identified a critical bottleneck in creator workflows and launched an automated video clipping platform, scaling to \textbf{5,000+ active users} over \textbf{4 months} and generating \textbf{\$600+ in MRR} through rapid product iterations}
+            \resumeItem{Established an \textbf{Enterprise Partnership with Mosaic (YC W25)} to handle core video infrastructure, focusing internal resources on product strategy, user-feedback loops, and high-velocity feature prioritization}
+            \resumeItem{Engineered a scalable organic distribution funnel via short-form social media platforms (\textbf{@easyclips\_io}), amassing \textbf{600K+ organic views} and driving high-converting user acquisition with zero direct marketing cost}
+            \resumeItem{Directed our end-to-end product strategy by translating core user pain points into technical architectures, optimizing system performance, and continuously shipping updates to maintain a competitive market edge}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Qrush AI} $|$ \emph{TypeScript, React, AWS, PostgreSQL, n8n}}{September 2025 -- February 2026}
+          \resumeItemListStart
+            \resumeItem{Architected a \textbf{scalable serverless infrastructure} on AWS App Runner and Neon (Postgres), implementing \textbf{Row-Level Security} to ensure strict data isolation and \textbf{auto-scaling} to support potential viral traffic spikes}
+            \resumeItem{Engineered an Agentic AI matchmaking engine by integrating \textbf{AWS Bedrock LLMs}, utilizing \textbf{Generative AI} to perform \textbf{semantic analysis} on user profiles and automate matchmaking logistics to eliminate human intervention}
+            \resumeItem{Developed a high-performance PWA using React, TypeScript, and \textbf{TanStack Query}, implementing \textbf{optimistic UI updates} to eliminate loading states and ensure a \textbf{zero-latency} profile experience for mobile users}
+            \resumeItem{Orchestrated \textbf{20+ automation workflows} using \textbf{n8n} and \textbf{AWS SES} to manage user lifecycles, executing a viral organic content strategy that secured \textbf{200+ verified beta signups} pre-launch with \textbf{\$0 marketing spend}}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Autonomous Delivery Robot} $|$ \emph{ROS2, Nav2, SLAM, C++, Python, Raspberry Pi}}{January 2025 -- April 2025}
+          \resumeItemListStart
+             \resumeItem{Developed \textbf{low-level firmware (C++)} on Arduino for \textbf{high-torque motor control} and encoder-based odometry; established a \textbf{UART serial bridge} to stream real-time kinematic data to a \textbf{ROS2} navigation stack}
+            \resumeItem{Architected a navigation stack on Raspberry Pi 4 using \textbf{ROS2} and \textbf{Nav2}, implementing \textbf{LiDAR-based SLAM} to generate precision indoor maps and enable \textbf{autonomous path planning} with dynamic obstacle avoidance}
+            \resumeItem{Engineered an end-to-end delivery workflow from dispatch to return-to-base logic, integrating high-level autonomy with low-level actuation to demonstrate \textbf{reliable autonomous transport} of items within a university facility}
+          \resumeItemListEnd
+
+          \resumeProjectHeading
+          {\textbf{Queen's Aerospace Design Team} $|$ \emph{Python, OpenCV, ROS2, YOLOv8, Linux}}{August 2024 -- May 2025}
+          \resumeItemListStart
+            \resumeItem{Engineered a \textbf{closed-loop} vision landing system using \textbf{OpenCV} and \textbf{ROS2}, implementing \textbf{active stabilization} and \textbf{PID control} to achieve \textbf{10cm precision} during water collection, even under \textbf{high wind disturbances}}
+            \resumeItem{Designed and deployed a \textbf{YOLOv8 + ROS2} computer vision pipeline on a fixed-wing UAV to autonomously detect wildfire targets, achieving \textbf{85\% detection accuracy} under varying flight conditions in system simulations}
+            \resumeItem{\textbf{Mentored 15+ engineers} on Python, ROS2, and Linux workflows, reducing new member onboarding time by \textbf{50\% (4 weeks to 2 weeks)} through the creation of structured training documentation and hands-on workshops}
+            \resumeItem{Led perception development for \textbf{2 competitive UAVs}, integrating software subsystems with custom hardware architectures to ensure reliable autonomous navigation and wildfire mapping for the AEAC competition}
+          \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+
+
+%
+%-----------PROGRAMMING SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+\textbf{Languages}{: Python, C++, C, TypeScript, JavaScript, SQL (PostgreSQL), Bash, MATLAB, Assembly, Java} \\
+\textbf{AI \& Robotics}{: ROS2, Nav2, YOLOv8, OpenCV, TensorFlow, NumPy, PX4 Autopilot, Gazebo, PID Control, SLAM} \\
+\textbf{Full-Stack}{: React Native, React.js, Angular, Express.js, Node.js, TanStack Query, Drizzle ORM, Supabase, FastAPI} \\
+\textbf{Cloud \& DevOps}{: AWS (EC2, RDS, App Runner, Bedrock, SES), Docker, Git, CI/CD, Linux (Ubuntu/WSL), n8n} \\
+\textbf{Hardware}{: NVIDIA Jetson, Raspberry Pi, Arduino, LiDAR, SolidWorks (CAD), I2C/SPI/UART, LTSpice} \\
+}}
+
+ \end{itemize}
+
+
+%-------------------------------------------
+\end{document}
