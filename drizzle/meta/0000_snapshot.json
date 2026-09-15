@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "69fc999f-7d91-4ee4-a802-af66690e6adb",
+  "id": "44361913-332b-4943-9db3-3445af05f121",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "assembly_sessions": {
@@ -36,13 +36,20 @@
           "autoincrement": false,
           "default": "'[]'"
         },
-        "selected_item_ids": {
-          "name": "selected_item_ids",
+        "selected_experience_ids": {
+          "name": "selected_experience_ids",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "'[]'"
+        },
+        "selected_project_id": {
+          "name": "selected_project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "coverage": {
           "name": "coverage",
@@ -52,8 +59,8 @@
           "autoincrement": false,
           "default": "'{}'"
         },
-        "suggestions": {
-          "name": "suggestions",
+        "edits": {
+          "name": "edits",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -104,30 +111,44 @@
           "notNull": true,
           "autoincrement": false
         },
-        "role_or_company": {
-          "name": "role_or_company",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "text": {
-          "name": "text",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "tags": {
-          "name": "tags",
+        "subtitle": {
+          "name": "subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "date_range": {
+          "name": "date_range",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "bullets": {
+          "name": "bullets",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "'[]'"
         },
-        "ats_keywords": {
-          "name": "ats_keywords",
+        "tags": {
+          "name": "tags",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

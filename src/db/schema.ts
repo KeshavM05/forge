@@ -4,12 +4,14 @@ export const bankItems = sqliteTable("bank_items", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),
   kind: text("kind", {
-    enum: ["experience", "project", "education", "skill", "certification"],
+    enum: ["experience", "project", "education", "skill"],
   }).notNull(),
-  roleOrCompany: text("role_or_company"),
-  text: text("text").notNull(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  dateRange: text("date_range"),
+  location: text("location"),
+  bullets: text("bullets").notNull().default("[]"),
   tags: text("tags").notNull().default("[]"),
-  atsKeywords: text("ats_keywords").notNull().default("[]"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
@@ -24,9 +26,12 @@ export const assemblySessions = sqliteTable("assembly_sessions", {
   userId: text("user_id").notNull(),
   jobDescription: text("job_description").notNull(),
   extractedKeywords: text("extracted_keywords").notNull().default("[]"),
-  selectedItemIds: text("selected_item_ids").notNull().default("[]"),
+  selectedExperienceIds: text("selected_experience_ids")
+    .notNull()
+    .default("[]"),
+  selectedProjectId: text("selected_project_id"),
   coverage: text("coverage").notNull().default("{}"),
-  suggestions: text("suggestions"),
+  edits: text("edits"),
   outputTex: text("output_tex"),
   createdAt: text("created_at")
     .notNull()
