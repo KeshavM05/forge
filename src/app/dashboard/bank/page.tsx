@@ -1,88 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
-  Plus,
-  Trash2,
+  Circle,
   Briefcase,
   FolderOpen,
   GraduationCap,
   Wrench,
-  Award,
 } from "lucide-react";
-import { useIDEDispatch } from "@/components/ide/ide-context";
-
-type BankItem = {
-  id: string;
-  kind: string;
-  roleOrCompany: string | null;
-  text: string;
-  tags: string;
-  atsKeywords: string;
-  active: boolean;
-};
-
-const KINDS = [
-  "experience",
-  "project",
-  "education",
-  "skill",
-  "certification",
-] as const;
+import { MASTER_BANK, type SeedEntry, EDUCATION_TEX, SKILLS_TEX } from "@/lib/seed-bank";
 
 const KIND_ICONS: Record<string, typeof Briefcase> = {
   experience: Briefcase,
   project: FolderOpen,
   education: GraduationCap,
   skill: Wrench,
-  certification: Award,
 };
 
+const KINDS = ["experience", "project"] as const;
+
 export default function BankPage() {
-  const [items, setItems] = useState<BankItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const [expandedKinds, setExpandedKinds] = useState<Set<string>>(
     new Set(KINDS)
   );
-  const dispatch = useIDEDispatch();
-
-  useEffect(() => {
-    fetch("/api/bank")
-      .then((r) => r.json() as Promise<{ items?: BankItem[] }>)
-      .then((data) => {
-        setItems(data.items || []);
-        setLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    dispatch({ type: "SET_COUNTS", selected: 0, bank: items.length });
-  }, [items.length, dispatch]);
-
-  async function handleDelete(id: string) {
-    await fetch(`/api/bank/${id}`, { method: "DELETE" });
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  }
-
-  async function handleAdd(item: Omit<BankItem, "id" | "active">) {
-    const res = await fetch("/api/bank", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item),
-    });
-    const data = (await res.json()) as { item?: BankItem };
-    if (data.item) {
-      const newItem = data.item;
-      setItems((prev) => [...prev, newItem]);
-      setShowForm(false);
-      setSelectedId(newItem.id);
-    }
-  }
 
   function toggleKind(kind: string) {
     setExpandedKinds((prev) => {
@@ -95,13 +38,13 @@ export default function BankPage() {
 
   const grouped = KINDS.reduce(
     (acc, kind) => {
-      acc[kind] = items.filter((i) => i.kind === kind);
+      acc[kind] = MASTER_BANK.filter((e) => e.kind === kind);
       return acc;
     },
-    {} as Record<string, BankItem[]>
+    {} as Record<string, SeedEntry[]>
   );
 
-  const selectedItem = items.find((i) => i.id === selectedId);
+  const selectedEntry = MASTER_BANK.find((e) => e.title === selectedTitle);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 w-full h-full">
@@ -109,90 +52,116 @@ export default function BankPage() {
       <div className="lg:col-span-4 xl:col-span-3 flex flex-col bg-surface-low border-r border-border-muted/30 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-border-muted/30">
           <span className="text-[11px] font-mono font-medium text-text-secondary uppercase tracking-wider">
-            Content Bank
+            Master Resume Bank
           </span>
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setSelectedId(null);
-            }}
-            className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-high transition-colors"
-            title="Add item"
-          >
-            <Plus size={14} />
-          </button>
+          <span className="text-[10px] font-mono text-text-muted">
+            {MASTER_BANK.length} entries
+          </span>
         </div>
 
-        {loading ? (
-          <div className="p-3 text-xs text-text-muted">Loading...</div>
-        ) : (
-          <div className="flex-1 py-1">
-            {KINDS.map((kind) => {
-              const kindItems = grouped[kind];
-              if (kindItems.length === 0 && !expandedKinds.has(kind))
-                return null;
-              const Icon = KIND_ICONS[kind] || Briefcase;
-              const expanded = expandedKinds.has(kind);
+        <div className="flex-1 py-1">
+          {KINDS.map((kind) => {
+            const kindItems = grouped[kind];
+            const Icon = KIND_ICONS[kind] || Briefcase;
+            const expanded = expandedKinds.has(kind);
 
-              return (
-                <div key={kind}>
-                  <button
-                    onClick={() => toggleKind(kind)}
-                    className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-mid/50 transition-colors"
-                  >
-                    {expanded ? (
-                      <ChevronDown size={12} />
-                    ) : (
-                      <ChevronRight size={12} />
-                    )}
-                    <Icon size={13} className="text-text-muted" />
-                    <span className="capitalize font-medium">{kind}</span>
-                    <span className="text-text-muted ml-auto text-[10px]">
-                      {kindItems.length}
-                    </span>
-                  </button>
-                  {expanded &&
-                    kindItems.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          setSelectedId(item.id);
-                          setShowForm(false);
-                        }}
-                        className={`w-full text-left pl-7 pr-2 py-1 text-xs truncate transition-colors ${
-                          selectedId === item.id
-                            ? "bg-accent-subtle text-accent"
-                            : "text-text-secondary hover:text-text-primary hover:bg-surface-mid/50"
-                        }`}
-                      >
-                        {item.roleOrCompany || item.text.slice(0, 50)}
-                      </button>
-                    ))}
-                </div>
-              );
-            })}
-          </div>
-        )}
+            return (
+              <div key={kind}>
+                <button
+                  onClick={() => toggleKind(kind)}
+                  className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-mid/50 transition-colors"
+                >
+                  {expanded ? (
+                    <ChevronDown size={12} />
+                  ) : (
+                    <ChevronRight size={12} />
+                  )}
+                  <Icon size={13} className="text-text-muted" />
+                  <span className="capitalize font-medium">
+                    {kind === "experience" ? "Experiences" : "Projects"}
+                  </span>
+                  <span className="text-text-muted ml-auto text-[10px]">
+                    {kindItems.length}
+                  </span>
+                </button>
+                {expanded &&
+                  kindItems.map((item) => (
+                    <button
+                      key={item.title + item.kind}
+                      onClick={() => setSelectedTitle(item.title)}
+                      className={`w-full text-left pl-7 pr-2 py-1.5 text-xs transition-colors ${
+                        selectedTitle === item.title
+                          ? "bg-accent-subtle text-accent"
+                          : "text-text-secondary hover:text-text-primary hover:bg-surface-mid/50"
+                      }`}
+                    >
+                      <p className="font-medium truncate">{item.title}</p>
+                      <p className="text-[10px] text-text-muted truncate">
+                        {item.subtitle}
+                      </p>
+                    </button>
+                  ))}
+              </div>
+            );
+          })}
+
+          {/* Static sections */}
+          <button
+            onClick={() => setSelectedTitle("__education__")}
+            className={`w-full flex items-center gap-1.5 px-2 py-1 text-xs transition-colors ${
+              selectedTitle === "__education__"
+                ? "bg-accent-subtle text-accent"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-mid/50"
+            }`}
+          >
+            <GraduationCap size={13} className="text-text-muted" />
+            <span className="font-medium">Education</span>
+            <span className="text-text-muted ml-auto text-[10px]">fixed</span>
+          </button>
+          <button
+            onClick={() => setSelectedTitle("__skills__")}
+            className={`w-full flex items-center gap-1.5 px-2 py-1 text-xs transition-colors ${
+              selectedTitle === "__skills__"
+                ? "bg-accent-subtle text-accent"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-mid/50"
+            }`}
+          >
+            <Wrench size={13} className="text-text-muted" />
+            <span className="font-medium">Technical Skills</span>
+            <span className="text-text-muted ml-auto text-[10px]">fixed</span>
+          </button>
+        </div>
       </div>
 
-      {/* Right: Detail / Add Form */}
+      {/* Right: Detail */}
       <div className="lg:col-span-8 xl:col-span-9 flex flex-col p-6 overflow-y-auto">
-        {showForm ? (
-          <AddItemForm
-            onSubmit={handleAdd}
-            onCancel={() => setShowForm(false)}
-          />
-        ) : selectedItem ? (
-          <ItemDetail item={selectedItem} onDelete={handleDelete} />
+        {selectedTitle === "__education__" ? (
+          <div className="max-w-2xl">
+            <span className="text-[11px] font-mono font-medium text-text-secondary uppercase tracking-wider block mb-3">
+              Education (constant across all resumes)
+            </span>
+            <pre className="bg-surface-mid rounded-lg p-4 text-[11px] font-mono text-text-secondary leading-5 overflow-x-auto">
+              {EDUCATION_TEX}
+            </pre>
+          </div>
+        ) : selectedTitle === "__skills__" ? (
+          <div className="max-w-2xl">
+            <span className="text-[11px] font-mono font-medium text-text-secondary uppercase tracking-wider block mb-3">
+              Technical Skills (constant across all resumes)
+            </span>
+            <pre className="bg-surface-mid rounded-lg p-4 text-[11px] font-mono text-text-secondary leading-5 overflow-x-auto">
+              {SKILLS_TEX}
+            </pre>
+          </div>
+        ) : selectedEntry ? (
+          <EntryDetail entry={selectedEntry} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-text-muted">
-            <p className="text-sm mb-2">Select an item or add a new one</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-3 py-1.5 rounded bg-accent text-base text-sm font-medium hover:bg-accent-bold transition-colors"
-            >
-              Add Item
-            </button>
+            <p className="text-sm">Select an entry to view details</p>
+            <p className="text-xs mt-1">
+              Your bank has {MASTER_BANK.filter((e) => e.kind === "experience").length} experiences and{" "}
+              {MASTER_BANK.filter((e) => e.kind === "project").length} projects
+            </p>
           </div>
         )}
       </div>
@@ -200,169 +169,61 @@ export default function BankPage() {
   );
 }
 
-function ItemDetail({
-  item,
-  onDelete,
-}: {
-  item: BankItem;
-  onDelete: (id: string) => void;
-}) {
-  const tags: string[] = JSON.parse(item.tags || "[]");
-  const Icon = KIND_ICONS[item.kind] || Briefcase;
+function EntryDetail({ entry }: { entry: SeedEntry }) {
+  const Icon = KIND_ICONS[entry.kind] || Briefcase;
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Icon size={16} className="text-accent" />
-          <span className="text-[11px] font-mono font-medium text-accent uppercase">
-            {item.kind}
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={16} className="text-accent" />
+        <span className="text-[11px] font-mono font-medium text-accent uppercase">
+          {entry.kind}
+        </span>
+      </div>
+
+      <h2 className="text-lg font-semibold text-text-primary mb-0.5">
+        {entry.title}
+      </h2>
+      <p className="text-sm text-text-secondary mb-1">{entry.subtitle}</p>
+      <p className="text-xs text-text-muted mb-4">
+        {entry.dateRange}
+        {entry.location && ` · ${entry.location}`}
+      </p>
+
+      <div className="space-y-2 mb-4">
+        {entry.bullets.map((bullet, i) => (
+          <div key={i} className="flex gap-2">
+            <Circle size={4} className="shrink-0 mt-2 text-text-muted" />
+            <p className="text-sm font-mono leading-relaxed text-text-primary bg-surface-mid rounded px-3 py-2 flex-1">
+              {bullet
+                .replace(/\\textbf\{/g, "")
+                .replace(/\}/g, "")
+                .replace(/\\\\/g, "")
+                .replace(/\\&/g, "&")
+                .replace(/\\%/g, "%")
+                .replace(/\\\$/g, "$")}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {entry.tags.length > 0 && (
+        <div>
+          <span className="text-[11px] font-mono font-medium text-text-secondary uppercase tracking-wider block mb-1.5">
+            Tags
           </span>
-          {item.roleOrCompany && (
-            <>
-              <span className="text-border-muted">·</span>
-              <span className="text-sm text-text-secondary">
-                {item.roleOrCompany}
+          <div className="flex flex-wrap gap-1.5">
+            {entry.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 rounded bg-surface-high text-[11px] font-mono text-text-secondary"
+              >
+                {tag}
               </span>
-            </>
-          )}
-        </div>
-        <button
-          onClick={() => onDelete(item.id)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-danger hover:bg-danger-dim/20 transition-colors"
-        >
-          <Trash2 size={12} />
-          Delete
-        </button>
-      </div>
-
-      <div className="bg-surface-mid rounded-lg p-4 font-mono text-sm leading-relaxed text-text-primary mb-4">
-        {item.text}
-      </div>
-
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-0.5 rounded bg-surface-high text-[11px] font-mono text-text-secondary"
-            >
-              {tag}
-            </span>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
-  );
-}
-
-function AddItemForm({
-  onSubmit,
-  onCancel,
-}: {
-  onSubmit: (item: Omit<BankItem, "id" | "active">) => void;
-  onCancel: () => void;
-}) {
-  const [kind, setKind] = useState<string>("experience");
-  const [roleOrCompany, setRoleOrCompany] = useState("");
-  const [text, setText] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!text.trim()) return;
-    onSubmit({
-      kind,
-      roleOrCompany: roleOrCompany || null,
-      text: text.trim(),
-      tags: JSON.stringify(
-        tagsInput
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean)
-      ),
-      atsKeywords: "[]",
-    });
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="max-w-2xl flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-mono font-medium text-text-secondary uppercase tracking-wider">
-          Add New Item
-        </span>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-xs text-text-secondary hover:text-text-primary transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-[11px] font-mono font-medium text-text-secondary mb-1">
-            Type
-          </label>
-          <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
-            className="w-full rounded bg-surface-mid border border-border-muted px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent/60"
-          >
-            {KINDS.map((k) => (
-              <option key={k} value={k}>
-                {k.charAt(0).toUpperCase() + k.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-[11px] font-mono font-medium text-text-secondary mb-1">
-            Role / Company
-          </label>
-          <input
-            type="text"
-            value={roleOrCompany}
-            onChange={(e) => setRoleOrCompany(e.target.value)}
-            placeholder="e.g. Software Engineer at Acme"
-            className="w-full rounded bg-surface-mid border border-border-muted px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/60"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-[11px] font-mono font-medium text-text-secondary mb-1">
-          Content
-        </label>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={4}
-          placeholder="Your bullet point, project description, or skill..."
-          className="w-full rounded bg-surface-mid border border-border-muted px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/60 resize-none"
-        />
-      </div>
-
-      <div>
-        <label className="block text-[11px] font-mono font-medium text-text-secondary mb-1">
-          Tags (comma-separated)
-        </label>
-        <input
-          type="text"
-          value={tagsInput}
-          onChange={(e) => setTagsInput(e.target.value)}
-          placeholder="python, distributed-systems, leadership"
-          className="w-full rounded bg-surface-mid border border-border-muted px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/60"
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="self-start px-4 py-2 rounded bg-accent text-base text-sm font-medium hover:bg-accent-bold transition-colors"
-      >
-        Add to Bank
-      </button>
-    </form>
   );
 }
