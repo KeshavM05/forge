@@ -20,12 +20,19 @@ export async function PUT(
   }
   const db = getDb(d1);
   const { id } = await params;
-  const body = await request.json();
+  const body = (await request.json()) as {
+    kind: string;
+    roleOrCompany?: string;
+    text: string;
+    tags?: string[];
+    atsKeywords?: string[];
+    active?: boolean;
+  };
 
   await db
     .update(bankItems)
     .set({
-      kind: body.kind,
+      kind: body.kind as "experience" | "project" | "education" | "skill" | "certification",
       roleOrCompany: body.roleOrCompany || null,
       text: body.text,
       tags: JSON.stringify(body.tags || []),

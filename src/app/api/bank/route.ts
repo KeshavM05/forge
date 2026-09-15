@@ -31,7 +31,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "D1 not available" }, { status: 503 });
   }
   const db = getDb(d1);
-  const body = await request.json();
+  const body = (await request.json()) as {
+    kind: string;
+    roleOrCompany?: string;
+    text: string;
+    tags?: string[];
+    atsKeywords?: string[];
+  };
 
   const newItem = {
     id: generateId(),

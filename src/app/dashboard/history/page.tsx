@@ -18,7 +18,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     fetch("/api/sessions")
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<{ sessions?: Session[] }>)
       .then((data) => {
         setSessions(data.sessions || []);
         setLoading(false);

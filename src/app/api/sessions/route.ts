@@ -31,7 +31,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "D1 not available" }, { status: 503 });
   }
   const db = getDb(d1);
-  const body = await request.json();
+  const body = (await request.json()) as {
+    jobDescription: string;
+    extractedKeywords?: string[];
+    selectedItemIds?: string[];
+    coverage?: Record<string, unknown>;
+    suggestions?: unknown;
+    outputTex?: string;
+  };
 
   const session = {
     id: generateId(),

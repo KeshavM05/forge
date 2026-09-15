@@ -27,7 +27,7 @@ export default function BankPage() {
 
   useEffect(() => {
     fetch("/api/bank")
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<{ items?: BankItem[] }>)
       .then((data) => {
         setItems(data.items || []);
         setLoading(false);
@@ -45,9 +45,10 @@ export default function BankPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(item),
     });
-    const data = await res.json();
+    const data = (await res.json()) as { item?: BankItem };
     if (data.item) {
-      setItems((prev) => [...prev, data.item]);
+      const newItem = data.item;
+      setItems((prev) => [...prev, newItem]);
       setShowForm(false);
     }
   }

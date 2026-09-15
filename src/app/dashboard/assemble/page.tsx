@@ -23,7 +23,7 @@ export default function AssemblePage() {
 
   useEffect(() => {
     fetch("/api/bank")
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<{ items?: BankItem[] }>)
       .then((data) => setItems(data.items || []));
   }, []);
 
@@ -43,7 +43,7 @@ export default function AssemblePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jobDescription: jd }),
     });
-    const data = await res.json();
+    const data = (await res.json()) as { keywords?: string[] };
     setKeywords(data.keywords || []);
     setAnalyzing(false);
     setStep("select");

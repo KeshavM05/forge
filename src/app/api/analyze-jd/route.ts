@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const { jobDescription } = await request.json();
+  const { jobDescription } = (await request.json()) as {
+    jobDescription: string;
+  };
   if (!jobDescription || typeof jobDescription !== "string") {
     return NextResponse.json(
       { error: "jobDescription is required" },
