@@ -1,4 +1,4 @@
-import { type SeedEntry, EDUCATION_TEX, SKILLS_TEX } from "./seed-bank";
+import { type SeedEntry } from "./seed-bank";
 
 const PREAMBLE = `%-------------------------
 % Resume in Latex
@@ -131,6 +131,8 @@ export type BulletEdit = {
 export function assembleResume(
   experiences: SeedEntry[],
   project: SeedEntry,
+  educationTex: string,
+  skillsTex: string,
   edits?: BulletEdit[]
 ): string {
   const editMap = new Map<string, Map<number, string>>();
@@ -164,7 +166,7 @@ ${HEADING}
 
 %-----------EDUCATION-----------
 \\section{Education}
-${EDUCATION_TEX}
+${educationTex}
 
 
 %-----------EXPERIENCE-----------
@@ -187,7 +189,7 @@ ${projectSection}
 %
 %-----------PROGRAMMING SKILLS-----------
 \\section{Technical Skills}
- ${SKILLS_TEX}
+ ${skillsTex}
 
 
 %-------------------------------------------

@@ -13,7 +13,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { MASTER_BANK, type SeedEntry } from "@/lib/seed-bank";
+import { type SeedEntry } from "@/lib/seed-bank";
 import {
   extractJDKeywords,
   selectBestEntries,
@@ -22,13 +22,12 @@ import {
 } from "@/lib/jd-analyzer";
 import { assembleResume, type BulletEdit } from "@/lib/latex-assembler";
 import { useIDEDispatch } from "@/components/ide/ide-context";
+import { useBank } from "@/lib/bank-store";
 
 type Step = "input" | "review" | "done";
 
-const experiences = MASTER_BANK.filter((e) => e.kind === "experience");
-const projects = MASTER_BANK.filter((e) => e.kind === "project");
-
 export default function AgentWorkspace() {
+  const bank = useBank();
   const [jd, setJd] = useState("");
   const [step, setStep] = useState<Step>("input");
   const [selectedExps, setSelectedExps] = useState<SeedEntry[]>([]);
@@ -41,6 +40,9 @@ export default function AgentWorkspace() {
   const [outputTex, setOutputTex] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const dispatch = useIDEDispatch();
+
+  const experiences = bank.experiences;
+  const projects = bank.projects;
 
   const synthesize = useCallback(() => {
     if (!jd.trim()) return;
@@ -98,7 +100,13 @@ export default function AgentWorkspace() {
 
   function approve() {
     if (!selectedProject) return;
-    const tex = assembleResume(selectedExps, selectedProject, edits);
+    const tex = assembleResume(
+      selectedExps,
+      selectedProject,
+      bank.educationTex,
+      bank.skillsTex,
+      edits
+    );
     setOutputTex(tex);
     setStep("done");
   }
