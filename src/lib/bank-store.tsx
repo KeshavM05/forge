@@ -76,7 +76,23 @@ function loadResumes(): ResumeFile[] {
   if (typeof window === "undefined") return [];
   const raw = localStorage.getItem(RESUMES_KEY);
   if (!raw) return [];
-  return JSON.parse(raw) as ResumeFile[];
+  try {
+    const parsed = JSON.parse(raw) as ResumeFile[];
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
+async function fetchMasterTemplate(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/master-tex");
+    if (!res.ok) return null;
+    const data = (await res.json()) as { tex: string };
+    return data.tex;
+  } catch {
+    return null;
+  }
 }
 
 function saveResumes(resumes: ResumeFile[]) {
@@ -94,8 +110,29 @@ export function BankProvider({ children }: { children: ReactNode }) {
     setEntries(loadEntries());
     setEducationTex(localStorage.getItem(EDUCATION_KEY) || EDUCATION_TEX);
     setSkillsTex(localStorage.getItem(SKILLS_KEY) || SKILLS_TEX);
-    setResumes(loadResumes());
-    setLoaded(true);
+
+    const loadedResumes = loadResumes();
+    if (loadedResumes.length > 0) {
+      setResumes(loadedResumes);
+      setLoaded(true);
+    } else {
+      fetchMasterTemplate().then((tex) => {
+        if (tex) {
+          const seeded: ResumeFile[] = [
+            {
+              id: generateId(),
+              name: "Master Resume",
+              tex,
+              isMaster: true,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+          setResumes(seeded);
+          saveResumes(seeded);
+        }
+        setLoaded(true);
+      });
+    }
   }, []);
 
   useEffect(() => {

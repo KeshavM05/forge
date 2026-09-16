@@ -401,17 +401,7 @@ export default function AgentWorkspace() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-text-muted gap-4 px-6">
-            <div className="w-14 h-14 rounded-2xl bg-surface-mid/60 flex items-center justify-center">
-              <FileText size={22} className="text-text-muted/60" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-text-secondary mb-1">Paste a job description to begin</p>
-              <p className="text-xs text-text-muted max-w-xs">
-                Claude analyzes the JD, selects the best content from your bank, scores ATS coverage, and compiles a real PDF preview
-              </p>
-            </div>
-          </div>
+          <EmptyPreview />
         )}
       </div>
     </div>
@@ -517,6 +507,56 @@ function ATSPanel({ coverage }: { coverage: AnalysisResult["coverage"] }) {
           ))}</div>
         </div>
       )}
+    </div>
+  );
+}
+
+function EmptyPreview() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Subtle grid background */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)",
+        backgroundSize: "40px 40px",
+      }} />
+
+      <div className="relative z-10 flex flex-col items-center gap-6 max-w-md text-center px-6">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center border border-accent/20">
+          <Sparkles size={24} className="text-accent" />
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold text-text-primary mb-2">
+            Paste a job description
+          </h3>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            Claude will analyze the JD, select the best content from your bank, score ATS keyword coverage, and compile a real PDF of your tailored resume.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-6 text-[11px] text-text-muted">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded bg-accent/10 flex items-center justify-center">
+              <span className="text-accent text-[10px] font-bold">1</span>
+            </div>
+            Paste JD
+          </div>
+          <div className="w-4 h-px bg-border-muted" />
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded bg-accent/10 flex items-center justify-center">
+              <span className="text-accent text-[10px] font-bold">2</span>
+            </div>
+            Review picks
+          </div>
+          <div className="w-4 h-px bg-border-muted" />
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded bg-accent/10 flex items-center justify-center">
+              <span className="text-accent text-[10px] font-bold">3</span>
+            </div>
+            Download PDF
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

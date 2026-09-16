@@ -62,10 +62,13 @@ export default function ResumesPage() {
           ) : (
             <div className="py-0.5">
               {bank.resumes.map((r) => (
-                <button
+                <div
                   key={r.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => { setSelectedId(r.id); setShowUpload(false); }}
-                  className={`group w-full text-left px-3 py-2 flex items-center gap-2 transition-all ${
+                  onKeyDown={(e) => { if (e.key === "Enter") { setSelectedId(r.id); setShowUpload(false); } }}
+                  className={`group w-full text-left px-3 py-2 flex items-center gap-2 transition-all cursor-pointer ${
                     selectedId === r.id
                       ? "bg-accent/8"
                       : "hover:bg-surface-mid/50"
@@ -94,7 +97,7 @@ export default function ResumesPage() {
                       <Trash2 size={10} />
                     </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}
