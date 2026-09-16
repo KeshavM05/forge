@@ -18,16 +18,15 @@ import { useBank, type ResumeFile } from "@/lib/bank-store";
 
 export default function ResumesPage() {
   const bank = useBank();
-  const [selectedId, setSelectedId] = useState<string | null>(
-    bank.masterResume?.id ?? null
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    if (bank.masterResume && !selectedId) {
-      setSelectedId(bank.masterResume.id);
+    if (!selectedId && bank.resumes.length > 0) {
+      const master = bank.resumes.find((r) => r.isMaster);
+      setSelectedId(master?.id ?? bank.resumes[0].id);
     }
-  }, [bank.masterResume, selectedId]);
+  }, [selectedId, bank.resumes]);
 
   const selected = bank.resumes.find((r) => r.id === selectedId);
 
