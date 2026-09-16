@@ -14,6 +14,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply forge-db --remote"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1133.0",
     "@opennextjs/cloudflare": "^1.20.6",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.46.0",
