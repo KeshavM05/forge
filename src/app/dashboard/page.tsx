@@ -98,12 +98,26 @@ export default function AgentWorkspace() {
       dispatch({ type: "SET_AGENT_STATUS", status: "done" });
       dispatch({ type: "SET_COVERAGE", score: data.coverage.score });
       compilePdf(tex);
+
+      bank.saveTailored({
+        name: `${data.jdAnalysis.role} — ${data.jdAnalysis.company}`,
+        company: data.jdAnalysis.company,
+        role: data.jdAnalysis.role,
+        jd,
+        tex,
+        atsScore: data.coverage.score,
+        coveredKeywords: data.coverage.covered,
+        missingKeywords: data.coverage.missing,
+        selectedExperiences: selExps.map((e) => e.title),
+        selectedProject: selProj.title,
+        analysis: JSON.stringify(data),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
       setStep("input");
       dispatch({ type: "SET_AGENT_STATUS", status: "idle" });
     }
-  }, [jd, experiences, projects, bank.educationTex, bank.skillsTex, dispatch]);
+  }, [jd, experiences, projects, bank.educationTex, bank.skillsTex, bank.saveTailored, dispatch]);
 
   async function compilePdf(tex: string) {
     setPdfLoading(true);

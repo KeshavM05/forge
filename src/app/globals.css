@@ -4,31 +4,31 @@
   --font-sans: "Geist", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Geist Mono", monospace;
 
-  --color-base: #07090e;
-  --color-surface: #0c1017;
-  --color-surface-low: #11151e;
-  --color-surface-mid: #171c27;
-  --color-surface-high: #1e2433;
-  --color-surface-highest: #2a3142;
+  --color-base: #06080d;
+  --color-surface: #0a0e16;
+  --color-surface-low: #0f1420;
+  --color-surface-mid: #151b29;
+  --color-surface-high: #1c2436;
+  --color-surface-highest: #253045;
 
-  --color-border: #2a3142;
-  --color-border-muted: #1e2433;
+  --color-border: #253045;
+  --color-border-muted: #1c2436;
 
-  --color-text-primary: #e2e8f3;
-  --color-text-secondary: #7d869a;
-  --color-text-muted: #404858;
-  --color-text-accent: #6ea1ff;
+  --color-text-primary: #e4eaf5;
+  --color-text-secondary: #7b859e;
+  --color-text-muted: #3d4760;
+  --color-text-accent: #6da0ff;
 
-  --color-accent: #4d8bff;
-  --color-accent-bold: #3b7aff;
-  --color-accent-dim: #1d3a72;
-  --color-accent-subtle: rgba(77, 139, 255, 0.08);
+  --color-accent: #4b88ff;
+  --color-accent-bold: #3a77ff;
+  --color-accent-dim: #1c3870;
+  --color-accent-subtle: rgba(75, 136, 255, 0.06);
 
-  --color-success: #34d058;
-  --color-success-dim: #1a7f37;
-  --color-warning: #e3b341;
-  --color-danger: #f85149;
-  --color-danger-dim: #8b1a1a;
+  --color-success: #2dd55b;
+  --color-success-dim: #167a34;
+  --color-warning: #f0b429;
+  --color-danger: #ef4444;
+  --color-danger-dim: #7f1d1d;
 }
 
 * {
@@ -36,9 +36,9 @@
   scrollbar-color: var(--color-surface-highest) transparent;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-surface-highest); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--color-surface-highest); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-border); }
 
 ::selection {
@@ -51,5 +51,33 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glass card */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* Glow effects */
+.glow-success { box-shadow: 0 0 12px rgba(45, 213, 91, 0.25); }
+.glow-warning { box-shadow: 0 0 12px rgba(240, 180, 41, 0.25); }
+.glow-danger { box-shadow: 0 0 12px rgba(239, 68, 68, 0.25); }
+.glow-accent { box-shadow: 0 0 16px rgba(75, 136, 255, 0.2); }
+
+/* Stagger animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Focus ring */
+.focus-ring:focus-within {
+  box-shadow: 0 0 0 2px var(--color-accent-dim), 0 0 0 1px var(--color-accent);
 }
