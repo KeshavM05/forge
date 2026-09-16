@@ -3,23 +3,27 @@ import { callBedrock } from "@/lib/bedrock";
 
 export const runtime = "nodejs";
 
-const SYSTEM_PROMPT = `You are an expert resume strategist and ATS optimization specialist. You help software engineers tailor their resumes for specific job descriptions.
+const SYSTEM_PROMPT = `You are an expert resume strategist and ATS optimization specialist for software engineers.
 
 Your job:
-1. Extract the key requirements, skills, and keywords from a job description
-2. Select the best 3 experiences and 1 project from a candidate's bank that match the JD
-3. Score ATS keyword coverage
-4. Suggest MINIMAL surgical edits to a few bullets to close ATS gaps — never rewrite, never larp, just thread in missing keywords naturally
+1. Extract the key requirements, skills, and ATS keywords from a job description
+2. Select the best 3 experiences and 1 project from the candidate's bank
+3. Score ATS keyword coverage across ALL selected content + skills section
+4. Suggest MINIMAL surgical edits to bullets to close ATS gaps
+5. Suggest a reordered/tweaked Technical Skills section to front-load JD-relevant skills
 
 Rules:
-- Each bullet is ~210 characters. Keep that length.
-- Never rewrite a bullet from scratch. Only suggest small word swaps or phrase insertions.
-- Items that appear in BOTH experience and project lists are the same work — only include once (prefer as experience, use as project only if not selected as experience)
-- The candidate's LaTeX template uses \\textbf{} for bold. Keep that syntax in edits.
-- Be specific about WHY each experience/project was selected
-- For missing keywords, only suggest edits when the keyword is genuinely important for the role
+- Each bullet is ~210 characters. Keep that length. Never rewrite from scratch.
+- Only suggest small word swaps or phrase insertions to thread in missing keywords.
+- Items appearing in BOTH experience and project lists are the same work — include once only (prefer experience, use as project only if not selected as experience).
+- The candidate's LaTeX template uses \\textbf{} for bold. Keep that syntax.
+- Be specific about WHY each experience/project was selected.
+- For the Technical Skills section: you CAN reorder categories, add missing JD-relevant skills, and remove less relevant ones. Keep the same category format (Languages, AI & Robotics, Full-Stack, Cloud & DevOps, Hardware) but reorder and adjust contents.
+- For atsKeywords: extract SPECIFIC technical terms (languages, frameworks, tools, methodologies) — not generic words like "design", "system", "software".
+- Coverage score should reflect what percentage of YOUR extracted atsKeywords appear in the selected experiences + project + skills combined.
+- When computing coverage AFTER edits, assume all suggested edits are accepted.
 
-Respond in JSON only. No markdown, no explanation outside the JSON.`;
+Respond in JSON only. No markdown wrapping, no explanation outside the JSON.`;
 
 type BankEntry = {
   kind: string;
@@ -33,10 +37,11 @@ type BankEntry = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { jd, experiences, projects } = (await request.json()) as {
+    const { jd, experiences, projects, skillsTex } = (await request.json()) as {
       jd: string;
       experiences: BankEntry[];
       projects: BankEntry[];
+      skillsTex: string;
     };
 
     if (!jd || !experiences?.length) {
@@ -58,6 +63,9 @@ Tags: ${p.tags.join(", ")}
 Bullets:
 ${p.bullets.map((b, j) => `  ${j}. ${b}`).join("\n")}`).join("\n\n")}
 
+## Current Technical Skills Section (LaTeX)
+${skillsTex}
+
 ## Task
 Analyze this JD and respond with this exact JSON schema:
 {
@@ -65,7 +73,7 @@ Analyze this JD and respond with this exact JSON schema:
     "role": "short role title",
     "company": "company name",
     "keyRequirements": ["list of 5-8 most important requirements"],
-    "atsKeywords": ["list of 15-25 specific technical keywords to match"],
+    "atsKeywords": ["15-25 SPECIFIC technical keywords/tools/languages from the JD"],
     "niceToHaves": ["optional/preferred qualifications"]
   },
   "selection": {
@@ -73,29 +81,32 @@ Analyze this JD and respond with this exact JSON schema:
       {
         "index": 0,
         "title": "Company Name",
-        "reason": "Why this experience matches the JD"
+        "reason": "1-2 sentence reason this matches"
       }
     ],
     "project": {
       "index": 0,
       "title": "Project Name",
-      "reason": "Why this project matches and doesn't duplicate a selected experience"
+      "reason": "1-2 sentence reason, confirming no duplicate with selected experiences"
     }
   },
   "coverage": {
     "score": 78,
-    "covered": ["keywords found in selected content"],
-    "missing": ["keywords NOT found in selected content"]
+    "covered": ["keywords found in selected content + skills"],
+    "missing": ["keywords NOT found anywhere in selected content + skills"],
+    "scoreAfterEdits": 92,
+    "coveredAfterEdits": ["keywords that would be covered if all edits accepted"]
   },
   "suggestedEdits": [
     {
       "entryTitle": "Company Name",
       "bulletIndex": 2,
-      "original": "the original bullet text",
+      "original": "the exact original bullet text",
       "edited": "the bullet with minimal keyword insertion",
       "reason": "Threads in 'keyword X' to close ATS gap"
     }
-  ]
+  ],
+  "suggestedSkills": "The full rewritten Technical Skills LaTeX section with JD-relevant skills front-loaded and any missing JD skills added. Keep the \\\\textbf{Category}{: items} format. This is raw LaTeX."
 }`;
 
     const raw = await callBedrock(SYSTEM_PROMPT, userMessage);

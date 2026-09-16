@@ -37,8 +37,11 @@ type AnalysisResult = {
     score: number;
     covered: string[];
     missing: string[];
+    scoreAfterEdits?: number;
+    coveredAfterEdits?: string[];
   };
   suggestedEdits: BulletEdit[];
+  suggestedSkills?: string;
 };
 
 type Step = "input" | "analyzing" | "review" | "compiled";
@@ -52,6 +55,8 @@ export default function AgentWorkspace() {
   const [selectedExps, setSelectedExps] = useState<SeedEntry[]>([]);
   const [selectedProject, setSelectedProject] = useState<SeedEntry | null>(null);
   const [acceptedEdits, setAcceptedEdits] = useState<Set<number>>(new Set());
+  const [skillsAccepted, setSkillsAccepted] = useState(false);
+  const [liveCoverage, setLiveCoverage] = useState<AnalysisResult["coverage"] | null>(null);
   const [outputTex, setOutputTex] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -72,7 +77,7 @@ export default function AgentWorkspace() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jd, experiences, projects }),
+        body: JSON.stringify({ jd, experiences, projects, skillsTex: bank.skillsTex }),
       });
 
       if (!res.ok) {
@@ -91,6 +96,8 @@ export default function AgentWorkspace() {
       setSelectedExps(selExps);
       setSelectedProject(selProj);
       setAcceptedEdits(new Set());
+      setSkillsAccepted(false);
+      setLiveCoverage(data.coverage);
 
       const tex = assembleResume(selExps, selProj, bank.educationTex, bank.skillsTex);
       setOutputTex(tex);
@@ -134,13 +141,28 @@ export default function AgentWorkspace() {
   }
 
   function recompile() {
-    const edits = analysis?.suggestedEdits
-      ?.filter((_, i) => acceptedEdits.has(i)) || [];
-    const tex = assembleResume(
-      selectedExps, selectedProject!, bank.educationTex, bank.skillsTex, edits
-    );
+    if (!analysis || !selectedProject) return;
+    const edits = analysis.suggestedEdits?.filter((_, i) => acceptedEdits.has(i)) || [];
+    const skills = skillsAccepted && analysis.suggestedSkills
+      ? analysis.suggestedSkills
+      : bank.skillsTex;
+    const tex = assembleResume(selectedExps, selectedProject, bank.educationTex, skills, edits);
     setOutputTex(tex);
     compilePdf(tex);
+
+    const hasEditsOrSkills = acceptedEdits.size > 0 || skillsAccepted;
+    if (hasEditsOrSkills && analysis.coverage.scoreAfterEdits) {
+      const newCoverage = {
+        ...analysis.coverage,
+        score: analysis.coverage.scoreAfterEdits,
+        covered: analysis.coverage.coveredAfterEdits || analysis.coverage.covered,
+        missing: analysis.coverage.missing.filter(
+          (kw) => !(analysis.coverage.coveredAfterEdits || []).includes(kw)
+        ),
+      };
+      setLiveCoverage(newCoverage);
+      dispatch({ type: "SET_COVERAGE", score: newCoverage.score });
+    }
   }
 
   function toggleEdit(index: number) {
@@ -174,6 +196,8 @@ export default function AgentWorkspace() {
     setSelectedExps([]);
     setSelectedProject(null);
     setAcceptedEdits(new Set());
+    setSkillsAccepted(false);
+    setLiveCoverage(null);
     setOutputTex("");
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
@@ -314,12 +338,35 @@ export default function AgentWorkspace() {
                 </Section>
               )}
 
+              {/* Skills Suggestion */}
+              {analysis.suggestedSkills && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">Skills Reorder</span>
+                  </div>
+                  <div
+                    onClick={() => setSkillsAccepted(!skillsAccepted)}
+                    className={`rounded-lg p-2.5 text-[10px] font-mono border transition-all cursor-pointer ${
+                      skillsAccepted ? "bg-success/5 border-success/30" : "bg-surface-mid/50 border-border-muted/50 hover:border-border"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-text-muted">Technical Skills section</span>
+                      <span className={`text-[9px] font-semibold ${skillsAccepted ? "text-success" : "text-text-muted"}`}>
+                        {skillsAccepted ? "ACCEPTED" : "CLICK TO ACCEPT"}
+                      </span>
+                    </div>
+                    <p className="text-text-secondary leading-relaxed whitespace-pre-wrap">{analysis.suggestedSkills.slice(0, 300)}...</p>
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-2 mt-auto pt-3">
-                {acceptedEdits.size > 0 && (
+                {(acceptedEdits.size > 0 || skillsAccepted) && (
                   <button onClick={recompile} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-success/90 text-white text-xs font-semibold hover:bg-success transition-all">
                     <Sparkles size={13} />
-                    Apply {acceptedEdits.size} edit{acceptedEdits.size > 1 ? "s" : ""} & Recompile
+                    Apply & Recompile
                   </button>
                 )}
                 <button onClick={downloadTex} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-surface-mid text-text-secondary text-xs font-medium hover:bg-surface-high transition-all" title="Download .tex">
@@ -353,7 +400,7 @@ export default function AgentWorkspace() {
                   <Code size={11} /> LaTeX
                 </button>
               </div>
-              <ATSBadge coverage={analysis.coverage} />
+              <ATSBadge coverage={liveCoverage || analysis.coverage} />
             </div>
 
             <div className="flex-1 flex overflow-hidden">
@@ -396,7 +443,7 @@ export default function AgentWorkspace() {
 
               {/* ATS Panel */}
               <div className="w-[250px] shrink-0 border-l border-border-muted overflow-y-auto p-4 bg-surface/50">
-                <ATSPanel coverage={analysis.coverage} />
+                <ATSPanel coverage={liveCoverage || analysis.coverage} />
               </div>
             </div>
           </>
