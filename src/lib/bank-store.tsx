@@ -14,19 +14,31 @@ export type BankEntry = SeedEntry & {
   id: string;
 };
 
+export type ResumeFile = {
+  id: string;
+  name: string;
+  tex: string;
+  isMaster: boolean;
+  createdAt: string;
+};
+
 type BankStore = {
   entries: BankEntry[];
   experiences: BankEntry[];
   projects: BankEntry[];
   educationTex: string;
   skillsTex: string;
-  masterTex: string;
+  resumes: ResumeFile[];
+  masterResume: ResumeFile | null;
   addEntry: (entry: SeedEntry) => void;
   updateEntry: (id: string, entry: Partial<SeedEntry>) => void;
   deleteEntry: (id: string) => void;
   updateEducation: (tex: string) => void;
   updateSkills: (tex: string) => void;
-  updateMasterTex: (tex: string) => void;
+  addResume: (name: string, tex: string) => string;
+  updateResume: (id: string, patch: { name?: string; tex?: string }) => void;
+  deleteResume: (id: string) => void;
+  setMasterResume: (id: string) => void;
   resetToDefaults: () => void;
 };
 
@@ -35,7 +47,7 @@ const BankContext = createContext<BankStore | null>(null);
 const STORAGE_KEY = "forge-bank";
 const EDUCATION_KEY = "forge-education-tex";
 const SKILLS_KEY = "forge-skills-tex";
-const MASTER_TEX_KEY = "forge-master-tex";
+const RESUMES_KEY = "forge-resumes";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -60,26 +72,39 @@ function saveEntries(entries: BankEntry[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
+function loadResumes(): ResumeFile[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(RESUMES_KEY);
+  if (!raw) return [];
+  return JSON.parse(raw) as ResumeFile[];
+}
+
+function saveResumes(resumes: ResumeFile[]) {
+  localStorage.setItem(RESUMES_KEY, JSON.stringify(resumes));
+}
+
 export function BankProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<BankEntry[]>([]);
   const [educationTex, setEducationTex] = useState(EDUCATION_TEX);
   const [skillsTex, setSkillsTex] = useState(SKILLS_TEX);
-  const [masterTex, setMasterTex] = useState("");
+  const [resumes, setResumes] = useState<ResumeFile[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setEntries(loadEntries());
-    setEducationTex(
-      localStorage.getItem(EDUCATION_KEY) || EDUCATION_TEX
-    );
+    setEducationTex(localStorage.getItem(EDUCATION_KEY) || EDUCATION_TEX);
     setSkillsTex(localStorage.getItem(SKILLS_KEY) || SKILLS_TEX);
-    setMasterTex(localStorage.getItem(MASTER_TEX_KEY) || "");
+    setResumes(loadResumes());
     setLoaded(true);
   }, []);
 
   useEffect(() => {
     if (loaded) saveEntries(entries);
   }, [entries, loaded]);
+
+  useEffect(() => {
+    if (loaded) saveResumes(resumes);
+  }, [resumes, loaded]);
 
   const addEntry = useCallback((entry: SeedEntry) => {
     setEntries((prev) => [...prev, { ...entry, id: generateId() }]);
@@ -105,9 +130,47 @@ export function BankProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(SKILLS_KEY, tex);
   }, []);
 
-  const updateMasterTex = useCallback((tex: string) => {
-    setMasterTex(tex);
-    localStorage.setItem(MASTER_TEX_KEY, tex);
+  const addResume = useCallback((name: string, tex: string): string => {
+    const id = generateId();
+    const newResume: ResumeFile = {
+      id,
+      name,
+      tex,
+      isMaster: false,
+      createdAt: new Date().toISOString(),
+    };
+    setResumes((prev) => {
+      if (prev.length === 0) {
+        return [{ ...newResume, isMaster: true }];
+      }
+      return [...prev, newResume];
+    });
+    return id;
+  }, []);
+
+  const updateResume = useCallback(
+    (id: string, patch: { name?: string; tex?: string }) => {
+      setResumes((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, ...patch } : r))
+      );
+    },
+    []
+  );
+
+  const deleteResume = useCallback((id: string) => {
+    setResumes((prev) => {
+      const filtered = prev.filter((r) => r.id !== id);
+      if (prev.find((r) => r.id === id)?.isMaster && filtered.length > 0) {
+        filtered[0].isMaster = true;
+      }
+      return filtered;
+    });
+  }, []);
+
+  const setMasterResume = useCallback((id: string) => {
+    setResumes((prev) =>
+      prev.map((r) => ({ ...r, isMaster: r.id === id }))
+    );
   }, []);
 
   const resetToDefaults = useCallback(() => {
@@ -115,14 +178,13 @@ export function BankProvider({ children }: { children: ReactNode }) {
     setEntries(seeded);
     setEducationTex(EDUCATION_TEX);
     setSkillsTex(SKILLS_TEX);
-    localStorage.removeItem(MASTER_TEX_KEY);
-    setMasterTex("");
     localStorage.setItem(EDUCATION_KEY, EDUCATION_TEX);
     localStorage.setItem(SKILLS_KEY, SKILLS_TEX);
   }, []);
 
   const experiences = entries.filter((e) => e.kind === "experience");
   const projects = entries.filter((e) => e.kind === "project");
+  const masterResume = resumes.find((r) => r.isMaster) || null;
 
   return (
     <BankContext.Provider
@@ -132,13 +194,17 @@ export function BankProvider({ children }: { children: ReactNode }) {
         projects,
         educationTex,
         skillsTex,
-        masterTex,
+        resumes,
+        masterResume,
         addEntry,
         updateEntry,
         deleteEntry,
         updateEducation,
         updateSkills,
-        updateMasterTex,
+        addResume,
+        updateResume,
+        deleteResume,
+        setMasterResume,
         resetToDefaults,
       }}
     >

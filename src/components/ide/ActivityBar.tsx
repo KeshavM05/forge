@@ -2,22 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Code, GitCompareArrows, ClipboardCheck, Settings } from "lucide-react";
+import {
+  Bot,
+  FileText,
+  Code,
+  ClipboardCheck,
+  Settings,
+} from "lucide-react";
 import { useIDEDispatch } from "./ide-context";
 
 const topItems = [
   { href: "/dashboard", icon: Bot, label: "Agent Workspace", id: "agent" },
-  { href: "/dashboard/bank", icon: Code, label: "Content Bank", id: "bank" },
   {
-    href: "/dashboard/assemble",
-    icon: GitCompareArrows,
-    label: "Assemble",
-    id: "assemble",
+    href: "/dashboard/resumes",
+    icon: FileText,
+    label: "Resumes",
+    id: "resumes",
   },
+  { href: "/dashboard/bank", icon: Code, label: "Content Bank", id: "bank" },
   {
     href: "/dashboard/history",
     icon: ClipboardCheck,
-    label: "ATS & History",
+    label: "History",
     id: "history",
   },
 ];

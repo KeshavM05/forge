@@ -4,17 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Terminal, User } from "lucide-react";
 import { useIDE, useIDEDispatch } from "./ide-context";
+import { useBank } from "@/lib/bank-store";
 
 const viewTabs = [
   { id: "agent", label: "Agent", href: "/dashboard" },
-  { id: "bank", label: "Document", href: "/dashboard/bank" },
-  { id: "assemble", label: "Diff", href: "/dashboard/assemble" },
+  { id: "resumes", label: "Resumes", href: "/dashboard/resumes" },
+  { id: "bank", label: "Bank", href: "/dashboard/bank" },
 ];
 
 export function HeaderBar() {
   const pathname = usePathname();
   const state = useIDE();
   const dispatch = useIDEDispatch();
+  const bank = useBank();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-11 bg-surface-low border-b border-border-muted/30 flex items-center justify-between px-3">
@@ -26,7 +28,7 @@ export function HeaderBar() {
         </Link>
         <span className="text-border">/</span>
         <span className="font-mono text-xs text-text-secondary">
-          resume.tex
+          {bank.masterResume?.name || "no master set"}
         </span>
         <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded bg-surface-mid border border-border-muted/40">
           <span

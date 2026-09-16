@@ -13,7 +13,6 @@ import {
   Trash2,
   Save,
   RotateCcw,
-  FileText,
 } from "lucide-react";
 import { useBank, type BankEntry } from "@/lib/bank-store";
 import { type SeedEntry } from "@/lib/seed-bank";
@@ -34,7 +33,6 @@ export default function BankPage() {
     new Set(KINDS)
   );
   const [showAdd, setShowAdd] = useState(false);
-  const [showMasterTex, setShowMasterTex] = useState(false);
   const [editingSection, setEditingSection] = useState<
     "education" | "skills" | null
   >(null);
@@ -69,21 +67,8 @@ export default function BankPage() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
-                setShowMasterTex(!showMasterTex);
-                setShowAdd(false);
-                setSelectedId(null);
-                setEditingSection(null);
-              }}
-              title="View master .tex"
-              className="w-6 h-6 rounded flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-high transition-colors"
-            >
-              <FileText size={13} />
-            </button>
-            <button
-              onClick={() => {
                 setShowAdd(true);
                 setSelectedId(null);
-                setShowMasterTex(false);
                 setEditingSection(null);
               }}
               title="Add entry"
@@ -133,7 +118,7 @@ export default function BankPage() {
                       onClick={() => {
                         setSelectedId(item.id);
                         setShowAdd(false);
-                        setShowMasterTex(false);
+
                         setEditingSection(null);
                       }}
                       className={`w-full text-left pl-7 pr-2 py-1.5 text-xs transition-colors ${
@@ -158,7 +143,6 @@ export default function BankPage() {
               setEditingSection("education");
               setSelectedId(null);
               setShowAdd(false);
-              setShowMasterTex(false);
             }}
             className={`w-full flex items-center gap-1.5 px-2 py-1 text-xs transition-colors ${
               editingSection === "education"
@@ -177,7 +161,6 @@ export default function BankPage() {
               setEditingSection("skills");
               setSelectedId(null);
               setShowAdd(false);
-              setShowMasterTex(false);
             }}
             className={`w-full flex items-center gap-1.5 px-2 py-1 text-xs transition-colors ${
               editingSection === "skills"
@@ -196,12 +179,7 @@ export default function BankPage() {
 
       {/* Right: Detail / Editor */}
       <div className="lg:col-span-8 xl:col-span-9 flex flex-col p-6 overflow-y-auto">
-        {showMasterTex ? (
-          <MasterTexEditor
-            value={bank.masterTex}
-            onSave={bank.updateMasterTex}
-          />
-        ) : showAdd ? (
+        {showAdd ? (
           <AddEntryForm
             onSubmit={(entry) => {
               bank.addEntry(entry);
@@ -520,44 +498,6 @@ function TexSectionEditor({
         onChange={(e) => setDraft(e.target.value)}
         rows={12}
         className="w-full rounded bg-surface-mid border border-border-muted px-3 py-2 text-[11px] font-mono text-text-primary focus:outline-none focus:ring-1 focus:ring-accent/60 resize-none leading-5"
-      />
-    </div>
-  );
-}
-
-function MasterTexEditor({
-  value,
-  onSave,
-}: {
-  value: string;
-  onSave: (v: string) => void;
-}) {
-  const [draft, setDraft] = useState(value);
-
-  return (
-    <div className="max-w-3xl flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-mono font-medium text-text-secondary uppercase tracking-wider">
-          Master Resume (.tex)
-        </span>
-        <button
-          onClick={() => onSave(draft)}
-          className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent text-base text-xs font-medium hover:bg-accent-bold transition-colors"
-        >
-          <Save size={12} />
-          Save
-        </button>
-      </div>
-      <p className="text-xs text-text-muted">
-        Paste your full master resume LaTeX here for reference. This is the
-        source of truth — the bank entries above are parsed from it.
-      </p>
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        rows={30}
-        placeholder="Paste your full master resume .tex here..."
-        className="w-full rounded bg-surface-mid border border-border-muted px-3 py-2 text-[11px] font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent/60 resize-none leading-5"
       />
     </div>
   );

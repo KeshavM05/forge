@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Bot, Code, GitCompareArrows, ClipboardCheck, Download } from "lucide-react";
+import { Search, Bot, Code, FileText, ClipboardCheck, Download } from "lucide-react";
 import { useIDE, useIDEDispatch } from "./ide-context";
 
 const commands = [
   { id: "agent", label: "Go to Agent Workspace", icon: Bot, href: "/dashboard" },
   { id: "bank", label: "Go to Content Bank", icon: Code, href: "/dashboard/bank" },
-  { id: "assemble", label: "Go to Assemble", icon: GitCompareArrows, href: "/dashboard/assemble" },
+  { id: "resumes", label: "Go to Resumes", icon: FileText, href: "/dashboard/resumes" },
   { id: "history", label: "Go to History", icon: ClipboardCheck, href: "/dashboard/history" },
   { id: "export", label: "Export .tex", icon: Download, href: null },
 ];
