@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Sparkles,
   CheckCircle,
@@ -11,9 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
   ArrowRightLeft,
-  FileText,
   Loader2,
-  Pencil,
   Eye,
   Code,
 } from "lucide-react";
@@ -44,7 +42,7 @@ type AnalysisResult = {
   suggestedSkills?: string;
 };
 
-type Step = "input" | "analyzing" | "review" | "compiled";
+type Step = "input" | "analyzing" | "results";
 
 export default function AgentWorkspace() {
   const bank = useBank();
@@ -79,20 +77,15 @@ export default function AgentWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jd, experiences, projects, skillsTex: bank.skillsTex }),
       });
-
       if (!res.ok) {
         const err = await res.json() as { error: string };
         throw new Error(err.error || "Analysis failed");
       }
-
       const data = (await res.json()) as AnalysisResult;
       setAnalysis(data);
 
-      const selExps = data.selection.experiences
-        .map((s) => experiences[s.index])
-        .filter(Boolean);
+      const selExps = data.selection.experiences.map((s) => experiences[s.index]).filter(Boolean);
       const selProj = projects[data.selection.project.index] || projects[0];
-
       setSelectedExps(selExps);
       setSelectedProject(selProj);
       setAcceptedEdits(new Set());
@@ -101,11 +94,9 @@ export default function AgentWorkspace() {
 
       const tex = assembleResume(selExps, selProj, bank.educationTex, bank.skillsTex);
       setOutputTex(tex);
-      setStep("review");
-
+      setStep("results");
       dispatch({ type: "SET_AGENT_STATUS", status: "done" });
       dispatch({ type: "SET_COVERAGE", score: data.coverage.score });
-
       compilePdf(tex);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
@@ -123,12 +114,7 @@ export default function AgentWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tex }),
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Compile failed" })) as { error: string };
-        throw new Error(err.error || "Compilation failed");
-      }
-
+      if (!res.ok) throw new Error("Compilation failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
@@ -143,50 +129,20 @@ export default function AgentWorkspace() {
   function recompile() {
     if (!analysis || !selectedProject) return;
     const edits = analysis.suggestedEdits?.filter((_, i) => acceptedEdits.has(i)) || [];
-    const skills = skillsAccepted && analysis.suggestedSkills
-      ? analysis.suggestedSkills
-      : bank.skillsTex;
+    const skills = skillsAccepted && analysis.suggestedSkills ? analysis.suggestedSkills : bank.skillsTex;
     const tex = assembleResume(selectedExps, selectedProject, bank.educationTex, skills, edits);
     setOutputTex(tex);
     compilePdf(tex);
-
-    const hasEditsOrSkills = acceptedEdits.size > 0 || skillsAccepted;
-    if (hasEditsOrSkills && analysis.coverage.scoreAfterEdits) {
+    if (analysis.coverage.scoreAfterEdits) {
       const newCoverage = {
         ...analysis.coverage,
         score: analysis.coverage.scoreAfterEdits,
         covered: analysis.coverage.coveredAfterEdits || analysis.coverage.covered,
-        missing: analysis.coverage.missing.filter(
-          (kw) => !(analysis.coverage.coveredAfterEdits || []).includes(kw)
-        ),
+        missing: analysis.coverage.missing.filter((kw) => !(analysis.coverage.coveredAfterEdits || []).includes(kw)),
       };
       setLiveCoverage(newCoverage);
       dispatch({ type: "SET_COVERAGE", score: newCoverage.score });
     }
-  }
-
-  function toggleEdit(index: number) {
-    setAcceptedEdits((prev) => {
-      const next = new Set(prev);
-      next.has(index) ? next.delete(index) : next.add(index);
-      return next;
-    });
-  }
-
-  function downloadTex() {
-    const blob = new Blob([outputTex], { type: "application/x-tex" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "resume.tex";
-    a.click();
-  }
-
-  function downloadPdf() {
-    if (!pdfUrl) return;
-    const a = document.createElement("a");
-    a.href = pdfUrl;
-    a.download = "resume.pdf";
-    a.click();
   }
 
   function reset() {
@@ -207,301 +163,271 @@ export default function AgentWorkspace() {
     dispatch({ type: "SET_COVERAGE", score: null });
   }
 
-  useEffect(() => {
-    return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
-  }, [pdfUrl]);
+  useEffect(() => { return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); }; }, [pdfUrl]);
 
-  return (
-    <div className="flex w-full h-full">
-      {/* LEFT — Agent Panel */}
-      <div className="w-[440px] shrink-0 flex flex-col border-r border-border-muted bg-surface overflow-y-auto">
-        <div className="p-4 flex flex-col gap-4 flex-1">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-              <Sparkles size={14} className="text-accent" />
-              Agent
-            </h2>
-            {step !== "input" && step !== "analyzing" && (
-              <button onClick={reset} className="text-[11px] text-text-muted hover:text-text-primary transition-colors">
-                New session
-              </button>
-            )}
+  const cov = liveCoverage || analysis?.coverage;
+
+  // ── INPUT: full-screen centered prompt ──
+  if (step === "input" || step === "analyzing") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full px-6">
+        <div className="w-full max-w-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-semibold text-text-primary mb-2">
+              What role are you applying for?
+            </h1>
+            <p className="text-sm text-text-secondary">
+              Paste the job description and Forge will tailor your resume
+            </p>
           </div>
 
-          {/* JD Input */}
-          <div className="rounded-lg bg-surface-mid p-3 focus-within:ring-1 focus-within:ring-accent/40 transition-all">
+          <div className="rounded-xl bg-surface-low border border-border-muted p-1 shadow-lg shadow-black/20">
             <textarea
               value={jd}
               onChange={(e) => setJd(e.target.value)}
-              rows={step === "input" ? 12 : 3}
+              rows={10}
               placeholder="Paste the full job description here..."
-              className="w-full bg-transparent text-xs text-text-primary placeholder:text-text-muted focus:outline-none resize-none leading-relaxed"
+              className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none resize-none p-4 leading-relaxed"
               disabled={step === "analyzing"}
+              autoFocus
             />
-            {step === "input" && (
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-muted/50">
-                <span className="text-[10px] text-text-muted">
-                  {experiences.length} exp · {projects.length} proj in bank
-                </span>
-                <button
-                  onClick={synthesize}
-                  disabled={!jd.trim() || experiences.length === 0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-white text-xs font-medium hover:bg-accent-bold transition-all disabled:opacity-30"
-                >
-                  <Send size={11} />
-                  Synthesize
-                </button>
-              </div>
-            )}
+            <div className="flex items-center justify-between px-4 py-2 border-t border-border-muted/50">
+              <span className="text-[11px] text-text-muted">
+                {bank.experiences.length} experiences · {bank.projects.length} projects in bank
+              </span>
+              <button
+                onClick={synthesize}
+                disabled={step === "analyzing" || !jd.trim() || experiences.length === 0}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {step === "analyzing" ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Analyzing with Claude...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} />
+                    Synthesize
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="rounded-lg bg-danger/10 border border-danger/30 px-3 py-2 text-xs text-danger">
+            <div className="mt-4 rounded-lg bg-danger/10 border border-danger/30 px-4 py-3 text-sm text-danger">
               {error}
             </div>
           )}
 
-          {/* Analyzing State */}
-          {step === "analyzing" && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-text-secondary">
-              <Loader2 size={20} className="animate-spin text-accent" />
-              <p className="text-xs">Analyzing JD with Claude Sonnet...</p>
-              <p className="text-[10px] text-text-muted">Extracting keywords, scoring entries, finding gaps</p>
+          <div className="flex items-center justify-center gap-8 mt-8 text-[11px] text-text-muted">
+            {["Paste JD", "AI selects content", "Review & edit", "Download PDF"].map((s, i) => (
+              <div key={s} className="flex items-center gap-2">
+                {i > 0 && <div className="w-6 h-px bg-border-muted -ml-4 mr-2" />}
+                <div className="w-5 h-5 rounded-full bg-surface-mid flex items-center justify-center text-[10px] font-semibold text-text-secondary">{i + 1}</div>
+                <span>{s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── RESULTS: split layout ──
+  return (
+    <div className="flex w-full h-full">
+      {/* LEFT: selections + edits */}
+      <div className="w-[380px] shrink-0 flex flex-col border-r border-border-muted overflow-y-auto bg-surface">
+        <div className="p-4 space-y-3 flex-1">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {cov && (
+                <span className={`text-lg font-bold font-mono ${cov.score >= 70 ? "text-success" : cov.score >= 40 ? "text-warning" : "text-danger"}`}>
+                  {cov.score}%
+                </span>
+              )}
+              <span className="text-xs text-text-secondary">ATS match</span>
+            </div>
+            <button onClick={reset} className="text-[11px] text-text-muted hover:text-text-primary transition-colors">New</button>
+          </div>
+
+          {/* JD summary */}
+          {analysis && (
+            <div className="rounded-lg bg-surface-mid/50 px-3 py-2">
+              <p className="text-xs font-semibold text-text-primary">{analysis.jdAnalysis.role}</p>
+              <p className="text-[10px] text-text-muted">{analysis.jdAnalysis.company}</p>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {analysis.jdAnalysis.keyRequirements.slice(0, 6).map((r) => (
+                  <span key={r} className="px-1.5 py-px rounded bg-accent/8 text-[9px] text-accent">{r}</span>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Analysis Results */}
-          {(step === "review" || step === "compiled") && analysis && (
-            <>
-              {/* JD Summary */}
-              <div className="rounded-lg bg-surface-mid/50 p-3">
-                <p className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest mb-1.5">
-                  {analysis.jdAnalysis.role} at {analysis.jdAnalysis.company}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {analysis.jdAnalysis.keyRequirements.map((req) => (
-                    <span key={req} className="px-1.5 py-px rounded bg-accent/8 text-[10px] text-accent">
-                      {req}
+          {/* Selected */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">Selected</span>
+            {selectedExps.map((exp, i) => (
+              <EntryCard key={exp.title + i} entry={exp} reason={analysis?.selection.experiences[i]?.reason}
+                alternatives={experiences.filter((e) => e.title !== exp.title)}
+                onSwap={(e) => { const n = [...selectedExps]; n[i] = e; setSelectedExps(n); }} />
+            ))}
+            {selectedProject && (
+              <EntryCard entry={selectedProject} reason={analysis?.selection.project.reason}
+                alternatives={projects.filter((p) => p.title !== selectedProject.title && !selectedExps.some((e) => e.title === p.title))}
+                onSwap={(p) => setSelectedProject(p)} isProject />
+            )}
+          </div>
+
+          {/* Edits */}
+          {analysis && analysis.suggestedEdits.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">Suggested Edits</span>
+              {analysis.suggestedEdits.map((edit, i) => (
+                <div key={i} onClick={() => { const n = new Set(acceptedEdits); n.has(i) ? n.delete(i) : n.add(i); setAcceptedEdits(n); }}
+                  className={`rounded-lg p-2 text-[10px] font-mono border transition-all cursor-pointer ${acceptedEdits.has(i) ? "bg-success/5 border-success/30" : "bg-surface-mid/40 border-border-muted/40 hover:border-border"}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-text-muted">{edit.entryTitle}</span>
+                    <span className={`text-[9px] font-semibold ${acceptedEdits.has(i) ? "text-success" : "text-text-muted"}`}>
+                      {acceptedEdits.has(i) ? "ACCEPTED" : "ACCEPT"}
                     </span>
-                  ))}
+                  </div>
+                  <p className="text-danger/50 line-through leading-relaxed">{stripLatex(edit.original).slice(0, 80)}...</p>
+                  <p className="text-success leading-relaxed">{stripLatex(edit.edited).slice(0, 80)}...</p>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {/* Skills */}
+          {analysis?.suggestedSkills && (
+            <div onClick={() => setSkillsAccepted(!skillsAccepted)}
+              className={`rounded-lg p-2 text-[10px] font-mono border transition-all cursor-pointer ${skillsAccepted ? "bg-success/5 border-success/30" : "bg-surface-mid/40 border-border-muted/40 hover:border-border"}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">Skills Reorder</span>
+                <span className={`text-[9px] font-semibold ${skillsAccepted ? "text-success" : "text-text-muted"}`}>{skillsAccepted ? "ACCEPTED" : "ACCEPT"}</span>
               </div>
+              <p className="text-text-secondary leading-relaxed">{analysis.suggestedSkills.slice(0, 150)}...</p>
+            </div>
+          )}
 
-              {/* Selected Entries */}
-              <Section label="Experiences" count={selectedExps.length}>
-                {selectedExps.map((exp, i) => (
-                  <EntryCard
-                    key={exp.title + i}
-                    entry={exp}
-                    reason={analysis.selection.experiences[i]?.reason}
-                    alternatives={experiences.filter((e) => e.title !== exp.title)}
-                    onSwap={(e) => {
-                      const next = [...selectedExps];
-                      next[i] = e;
-                      setSelectedExps(next);
-                    }}
-                  />
-                ))}
-              </Section>
-
-              <Section label="Project" count={1}>
-                {selectedProject && (
-                  <EntryCard
-                    entry={selectedProject}
-                    reason={analysis.selection.project.reason}
-                    alternatives={projects.filter(
-                      (p) => p.title !== selectedProject.title && !selectedExps.some((e) => e.title === p.title)
-                    )}
-                    onSwap={(p) => setSelectedProject(p)}
-                  />
-                )}
-              </Section>
-
-              {/* Suggested Edits */}
-              {analysis.suggestedEdits.length > 0 && (
-                <Section label="Suggested Edits" count={analysis.suggestedEdits.length}>
-                  {analysis.suggestedEdits.map((edit, i) => (
-                    <div key={i} className={`rounded-lg p-2.5 text-[10px] font-mono border transition-all cursor-pointer ${
-                      acceptedEdits.has(i) ? "bg-success/5 border-success/30" : "bg-surface-mid/50 border-border-muted/50 hover:border-border"
-                    }`} onClick={() => toggleEdit(i)}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-text-muted">{edit.entryTitle} · bullet {edit.bulletIndex}</span>
-                        <span className={`text-[9px] font-semibold ${acceptedEdits.has(i) ? "text-success" : "text-text-muted"}`}>
-                          {acceptedEdits.has(i) ? "ACCEPTED" : "CLICK TO ACCEPT"}
-                        </span>
-                      </div>
-                      <p className="text-danger/60 line-through mb-0.5 leading-relaxed">{stripLatex(edit.original)}</p>
-                      <p className="text-success leading-relaxed">{stripLatex(edit.edited)}</p>
-                      <p className="text-text-muted mt-1 italic">{edit.reason}</p>
-                    </div>
-                  ))}
-                </Section>
-              )}
-
-              {/* Skills Suggestion */}
-              {analysis.suggestedSkills && (
+          {/* ATS keywords */}
+          {cov && (
+            <div className="space-y-2">
+              <div className="w-full h-1 rounded-full bg-surface-highest overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${cov.score >= 70 ? "bg-success" : cov.score >= 40 ? "bg-warning" : "bg-danger"}`} style={{ width: `${cov.score}%` }} />
+              </div>
+              {cov.missing.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">Skills Reorder</span>
-                  </div>
-                  <div
-                    onClick={() => setSkillsAccepted(!skillsAccepted)}
-                    className={`rounded-lg p-2.5 text-[10px] font-mono border transition-all cursor-pointer ${
-                      skillsAccepted ? "bg-success/5 border-success/30" : "bg-surface-mid/50 border-border-muted/50 hover:border-border"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-text-muted">Technical Skills section</span>
-                      <span className={`text-[9px] font-semibold ${skillsAccepted ? "text-success" : "text-text-muted"}`}>
-                        {skillsAccepted ? "ACCEPTED" : "CLICK TO ACCEPT"}
-                      </span>
-                    </div>
-                    <p className="text-text-secondary leading-relaxed whitespace-pre-wrap">{analysis.suggestedSkills.slice(0, 300)}...</p>
+                  <span className="text-[9px] font-mono text-danger">{cov.missing.length} missing</span>
+                  <div className="flex flex-wrap gap-0.5 mt-0.5">
+                    {cov.missing.map((kw) => <span key={kw} className="px-1 py-px rounded bg-danger/8 text-[9px] font-mono text-danger/70">{kw}</span>)}
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 mt-auto pt-3">
-                {(acceptedEdits.size > 0 || skillsAccepted) && (
-                  <button onClick={recompile} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-success/90 text-white text-xs font-semibold hover:bg-success transition-all">
-                    <Sparkles size={13} />
-                    Apply & Recompile
-                  </button>
-                )}
-                <button onClick={downloadTex} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-surface-mid text-text-secondary text-xs font-medium hover:bg-surface-high transition-all" title="Download .tex">
-                  <Code size={12} /> .tex
-                </button>
-                {pdfUrl && (
-                  <button onClick={downloadPdf} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-accent text-white text-xs font-semibold hover:bg-accent-bold transition-all" title="Download PDF">
-                    <Download size={12} /> PDF
-                  </button>
-                )}
-                <button onClick={reset} className="px-3 py-2 rounded-md bg-surface-mid text-text-muted hover:text-danger hover:bg-danger/10 text-xs transition-all">
-                  <X size={14} />
-                </button>
-              </div>
-            </>
+        {/* Bottom actions */}
+        <div className="p-3 border-t border-border-muted flex gap-2">
+          {(acceptedEdits.size > 0 || skillsAccepted) && (
+            <button onClick={recompile} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-success text-white text-xs font-semibold hover:bg-success-dim transition-all">
+              <Sparkles size={12} /> Apply & Recompile
+            </button>
+          )}
+          <button onClick={() => { const blob = new Blob([outputTex], { type: "application/x-tex" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "resume.tex"; a.click(); }}
+            className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-surface-mid text-text-secondary text-xs font-medium hover:bg-surface-high transition-all">
+            <Code size={11} /> .tex
+          </button>
+          {pdfUrl && (
+            <button onClick={() => { const a = document.createElement("a"); a.href = pdfUrl; a.download = "resume.pdf"; a.click(); }}
+              className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-accent-bold transition-all">
+              <Download size={11} /> PDF
+            </button>
           )}
         </div>
       </div>
 
-      {/* RIGHT — PDF Preview + ATS */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-base">
-        {analysis ? (
-          <>
-            {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-1.5 border-b border-border-muted shrink-0">
-              <div className="flex items-center p-0.5 rounded-md bg-surface-mid">
-                <button onClick={() => setViewMode("pdf")} className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all ${viewMode === "pdf" ? "bg-surface-high text-text-primary shadow-sm" : "text-text-muted"}`}>
-                  <Eye size={11} /> Preview
-                </button>
-                <button onClick={() => setViewMode("tex")} className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all ${viewMode === "tex" ? "bg-surface-high text-text-primary shadow-sm" : "text-text-muted"}`}>
-                  <Code size={11} /> LaTeX
-                </button>
-              </div>
-              <ATSBadge coverage={liveCoverage || analysis.coverage} />
+      {/* RIGHT: PDF preview */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border-muted shrink-0">
+          <div className="flex p-0.5 rounded-md bg-surface-mid">
+            <button onClick={() => setViewMode("pdf")} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${viewMode === "pdf" ? "bg-surface-high text-text-primary shadow-sm" : "text-text-muted"}`}>
+              <Eye size={10} /> Preview
+            </button>
+            <button onClick={() => setViewMode("tex")} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${viewMode === "tex" ? "bg-surface-high text-text-primary shadow-sm" : "text-text-muted"}`}>
+              <Code size={10} /> LaTeX
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto bg-surface-highest/20">
+          {viewMode === "pdf" ? (
+            <div className="h-full flex items-center justify-center p-4">
+              {pdfLoading ? (
+                <div className="flex flex-col items-center gap-2 text-text-secondary">
+                  <Loader2 size={20} className="animate-spin text-accent" />
+                  <p className="text-xs">Compiling LaTeX...</p>
+                </div>
+              ) : pdfError ? (
+                <div className="text-center text-danger">
+                  <AlertTriangle size={18} className="mx-auto mb-2" />
+                  <p className="text-xs mb-2">{pdfError}</p>
+                  <button onClick={() => compilePdf(outputTex)} className="px-3 py-1 rounded bg-surface-mid text-text-secondary text-[11px]">Retry</button>
+                </div>
+              ) : pdfUrl ? (
+                <iframe src={pdfUrl} className="w-full h-full bg-white rounded shadow-2xl shadow-black/30" title="Resume PDF" />
+              ) : null}
             </div>
-
-            <div className="flex-1 flex overflow-hidden">
-              {/* Document area */}
-              <div className="flex-1 overflow-auto bg-surface-highest/30">
-                {viewMode === "pdf" ? (
-                  <div className="h-full flex items-center justify-center p-4">
-                    {pdfLoading ? (
-                      <div className="flex flex-col items-center gap-3 text-text-secondary">
-                        <Loader2 size={24} className="animate-spin text-accent" />
-                        <p className="text-xs">Compiling LaTeX...</p>
-                      </div>
-                    ) : pdfError ? (
-                      <div className="flex flex-col items-center gap-2 text-danger text-center max-w-sm">
-                        <AlertTriangle size={20} />
-                        <p className="text-xs font-medium">Compilation Error</p>
-                        <p className="text-[10px] text-text-muted">{pdfError}</p>
-                        <button onClick={() => compilePdf(outputTex)} className="mt-2 px-3 py-1 rounded-md bg-surface-mid text-text-secondary text-[11px] hover:bg-surface-high transition-all">
-                          Retry
-                        </button>
-                      </div>
-                    ) : pdfUrl ? (
-                      <iframe
-                        src={pdfUrl}
-                        className="w-full h-full rounded shadow-2xl shadow-black/40 bg-white"
-                        title="Resume PDF Preview"
-                      />
-                    ) : (
-                      <p className="text-xs text-text-muted">No PDF yet</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-4">
-                    <pre className="max-w-[700px] mx-auto text-[11px] font-mono leading-[1.65] text-text-secondary whitespace-pre-wrap">
-                      {outputTex}
-                    </pre>
-                  </div>
-                )}
-              </div>
-
-              {/* ATS Panel */}
-              <div className="w-[250px] shrink-0 border-l border-border-muted overflow-y-auto p-4 bg-surface/50">
-                <ATSPanel coverage={liveCoverage || analysis.coverage} />
-              </div>
-            </div>
-          </>
-        ) : (
-          <EmptyPreview />
-        )}
+          ) : (
+            <pre className="p-4 text-[11px] font-mono leading-[1.6] text-text-secondary whitespace-pre-wrap max-w-[700px] mx-auto">{outputTex}</pre>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function Section({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">{label}</span>
-        <span className="text-[10px] font-mono text-text-muted">{count}</span>
-      </div>
-      <div className="space-y-1.5">{children}</div>
-    </div>
-  );
-}
-
-function EntryCard({ entry, reason, alternatives, onSwap }: { entry: SeedEntry; reason?: string; alternatives: SeedEntry[]; onSwap: (e: SeedEntry) => void }) {
+function EntryCard({ entry, reason, alternatives, onSwap, isProject }: {
+  entry: SeedEntry; reason?: string; alternatives: SeedEntry[]; onSwap: (e: SeedEntry) => void; isProject?: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
-
   return (
-    <div className="rounded-lg bg-surface-mid/50 border border-border-muted/50 overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2">
-        <button onClick={() => setExpanded(!expanded)} className="flex-1 flex items-center gap-2 text-left min-w-0">
-          {expanded ? <ChevronDown size={11} className="text-text-muted shrink-0" /> : <ChevronRight size={11} className="text-text-muted shrink-0" />}
+    <div className={`rounded-lg border overflow-hidden ${isProject ? "border-warning/20 bg-warning/[0.03]" : "border-border-muted/40 bg-surface-mid/30"}`}>
+      <div className="flex items-center gap-2 px-2.5 py-1.5">
+        <button onClick={() => setExpanded(!expanded)} className="flex-1 flex items-center gap-1.5 text-left min-w-0">
+          {expanded ? <ChevronDown size={10} className="text-text-muted shrink-0" /> : <ChevronRight size={10} className="text-text-muted shrink-0" />}
           <div className="min-w-0">
-            <p className="text-[11px] font-medium text-text-primary truncate">{entry.title}</p>
+            <div className="flex items-center gap-1.5">
+              {isProject && <span className="text-[8px] font-mono font-bold text-warning bg-warning/10 px-1 rounded">PROJ</span>}
+              <p className="text-[11px] font-medium text-text-primary truncate">{entry.title}</p>
+            </div>
             <p className="text-[10px] text-text-muted truncate">{entry.subtitle}</p>
           </div>
         </button>
-        <CheckCircle size={12} className="text-accent shrink-0" />
+        <CheckCircle size={11} className={isProject ? "text-warning" : "text-accent"} />
         {alternatives.length > 0 && (
           <button onClick={() => setShowSwap(!showSwap)} className="w-5 h-5 rounded flex items-center justify-center text-text-muted hover:text-accent hover:bg-accent/10 transition-all">
-            <ArrowRightLeft size={10} />
+            <ArrowRightLeft size={9} />
           </button>
         )}
       </div>
-      {reason && <p className="px-3 pb-1.5 text-[10px] text-accent/70 italic">{reason}</p>}
+      {reason && <p className="px-2.5 pb-1 text-[9px] text-accent/60 italic">{reason}</p>}
       {expanded && (
-        <div className="px-3 pb-2 space-y-1">
-          {entry.bullets.map((b, i) => (
-            <p key={i} className="text-[10px] text-text-secondary leading-relaxed pl-4 border-l border-border-muted">{stripLatex(b)}</p>
-          ))}
+        <div className="px-2.5 pb-2 space-y-0.5">
+          {entry.bullets.map((b, i) => <p key={i} className="text-[9px] text-text-secondary leading-relaxed pl-3 border-l border-border-muted">{stripLatex(b)}</p>)}
         </div>
       )}
       {showSwap && (
-        <div className="border-t border-border-muted/30 bg-surface-low/50 p-1.5 space-y-0.5">
+        <div className="border-t border-border-muted/30 p-1 space-y-px">
           {alternatives.map((alt) => (
             <button key={alt.title} onClick={() => { onSwap(alt); setShowSwap(false); }}
               className="w-full text-left px-2 py-1 rounded text-[10px] text-text-secondary hover:bg-surface-mid hover:text-text-primary transition-colors truncate">
-              {alt.title} — <span className="text-text-muted">{alt.subtitle}</span>
+              {alt.title}
             </button>
           ))}
         </div>
@@ -510,111 +436,9 @@ function EntryCard({ entry, reason, alternatives, onSwap }: { entry: SeedEntry; 
   );
 }
 
-function ATSBadge({ coverage }: { coverage: AnalysisResult["coverage"] }) {
-  const c = coverage.score >= 70 ? "text-success" : coverage.score >= 40 ? "text-warning" : "text-danger";
-  return (
-    <div className="flex items-center gap-2">
-      <span className={`text-base font-bold font-mono ${c}`}>{coverage.score}%</span>
-      <span className="text-[10px] text-text-muted">{coverage.covered.length}/{coverage.covered.length + coverage.missing.length} keywords</span>
-    </div>
-  );
-}
-
-function ATSPanel({ coverage }: { coverage: AnalysisResult["coverage"] }) {
-  return (
-    <div className="space-y-4">
-      <div>
-        <div className="flex items-baseline justify-between mb-2">
-          <span className="text-[10px] font-mono font-semibold text-text-muted uppercase tracking-widest">ATS Score</span>
-          <span className={`text-2xl font-bold font-mono ${coverage.score >= 70 ? "text-success" : coverage.score >= 40 ? "text-warning" : "text-danger"}`}>{coverage.score}%</span>
-        </div>
-        <div className="w-full h-1.5 rounded-full bg-surface-highest overflow-hidden">
-          <div className={`h-full rounded-full transition-all duration-700 ${coverage.score >= 70 ? "bg-success" : coverage.score >= 40 ? "bg-warning" : "bg-danger"}`} style={{ width: `${coverage.score}%` }} />
-        </div>
-      </div>
-      {coverage.covered.length > 0 && (
-        <div>
-          <div className="flex items-center gap-1 mb-1.5">
-            <CheckCircle size={10} className="text-success" />
-            <span className="text-[10px] font-mono text-success font-medium">{coverage.covered.length} covered</span>
-          </div>
-          <div className="flex flex-wrap gap-1">{coverage.covered.map((kw) => (
-            <span key={kw} className="px-1.5 py-px rounded bg-success/8 text-[9px] font-mono text-success/80">{kw}</span>
-          ))}</div>
-        </div>
-      )}
-      {coverage.missing.length > 0 && (
-        <div>
-          <div className="flex items-center gap-1 mb-1.5">
-            <AlertTriangle size={10} className="text-danger" />
-            <span className="text-[10px] font-mono text-danger font-medium">{coverage.missing.length} gaps</span>
-          </div>
-          <div className="flex flex-wrap gap-1">{coverage.missing.map((kw) => (
-            <span key={kw} className="px-1.5 py-px rounded bg-danger/8 text-[9px] font-mono text-danger/70">{kw}</span>
-          ))}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmptyPreview() {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Subtle grid background */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
-
-      <div className="relative z-10 flex flex-col items-center gap-6 max-w-md text-center px-6">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center border border-accent/20">
-          <Sparkles size={24} className="text-accent" />
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-2">
-            Paste a job description
-          </h3>
-          <p className="text-sm text-text-secondary leading-relaxed">
-            Claude will analyze the JD, select the best content from your bank, score ATS keyword coverage, and compile a real PDF of your tailored resume.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-6 text-[11px] text-text-muted">
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded bg-accent/10 flex items-center justify-center">
-              <span className="text-accent text-[10px] font-bold">1</span>
-            </div>
-            Paste JD
-          </div>
-          <div className="w-4 h-px bg-border-muted" />
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded bg-accent/10 flex items-center justify-center">
-              <span className="text-accent text-[10px] font-bold">2</span>
-            </div>
-            Review picks
-          </div>
-          <div className="w-4 h-px bg-border-muted" />
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded bg-accent/10 flex items-center justify-center">
-              <span className="text-accent text-[10px] font-bold">3</span>
-            </div>
-            Download PDF
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function stripLatex(text: string): string {
-  return text
-    .replace(/\\textbf\{([^}]*)\}/g, "$1")
-    .replace(/\\textit\{([^}]*)\}/g, "$1")
-    .replace(/\\href\{[^}]*\}\{([^}]*)\}/g, "$1")
-    .replace(/\\emph\{([^}]*)\}/g, "$1")
-    .replace(/\\\$/g, "$").replace(/\\&/g, "&").replace(/\\%/g, "%")
-    .replace(/\\_/g, "_").replace(/\\#/g, "#").replace(/\\\\/g, "")
-    .replace(/\{|\}/g, "");
+  return text.replace(/\\textbf\{([^}]*)\}/g, "$1").replace(/\\textit\{([^}]*)\}/g, "$1")
+    .replace(/\\href\{[^}]*\}\{([^}]*)\}/g, "$1").replace(/\\emph\{([^}]*)\}/g, "$1")
+    .replace(/\\\$/g, "$").replace(/\\&/g, "&").replace(/\\%/g, "%").replace(/\\_/g, "_")
+    .replace(/\\#/g, "#").replace(/\\\\/g, "").replace(/\{|\}/g, "");
 }
