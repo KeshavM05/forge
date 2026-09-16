@@ -15,11 +15,11 @@ export default function DashboardLayout({
   return (
     <IDEProvider>
       <BankProvider>
-        <div className="h-screen overflow-hidden bg-base text-text-primary select-none">
+        <div className="h-screen overflow-hidden bg-base text-text-primary">
           <HeaderBar />
           <ActivityBar />
-          <div className="pl-12 pt-11 pb-6 h-full">
-            <main className="h-full overflow-hidden bg-base">{children}</main>
+          <div className="pl-11 pt-10 pb-5 h-full">
+            <main className="h-full overflow-hidden">{children}</main>
           </div>
           <StatusBar />
           <CommandPalette />

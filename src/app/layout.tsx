@@ -4,19 +4,25 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Forge — LaTeX Resume Assembler",
   description:
-    "Select your best content for any job description, assemble a tailored LaTeX resume, and check ATS keyword coverage.",
+    "Intelligent resume assembly. Select content from your bank, match ATS keywords, and export your LaTeX template — tailored for every job.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="dark h-full antialiased">
+    <html lang="en" className="h-full">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap"
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=JetBrains+Mono:wght@300..700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="h-full">{children}</body>
     </html>
   );
 }

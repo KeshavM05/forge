@@ -1,43 +1,37 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
 import { useIDE } from "./ide-context";
+import { useBank } from "@/lib/bank-store";
 
 export function StatusBar() {
   const state = useIDE();
+  const bank = useBank();
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 h-6 bg-surface-low border-t border-border-muted/30 z-40 flex items-center justify-between px-2 text-[11px] font-medium text-text-secondary">
-      <div className="flex items-center gap-2">
-        <span className="flex items-center gap-1 text-text-primary">
-          <RefreshCw size={12} className="text-success" />
-          Forge Engine
-        </span>
-        <span className="text-border-muted">|</span>
-        <span>UTF-8</span>
-        {state.bankCount > 0 && (
-          <>
-            <span className="text-border-muted">|</span>
-            <span>
-              {state.selectedCount}/{state.bankCount} items
-            </span>
-          </>
-        )}
+    <footer className="fixed bottom-0 left-0 right-0 h-5 bg-surface-low border-t border-border-muted z-40 flex items-center justify-between px-3 text-[10px] font-mono text-text-muted">
+      <div className="flex items-center gap-3">
+        <span className="text-text-secondary">Forge</span>
+        <span>{bank.experiences.length} exp</span>
+        <span>{bank.projects.length} proj</span>
+        <span>{bank.resumes.length} resumes</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {state.coverageScore !== null && (
-          <>
-            <span
-              className={
-                state.coverageScore >= 70 ? "text-success" : "text-warning"
-              }
-            >
-              ATS: {state.coverageScore}%
-            </span>
-            <span className="text-border-muted">|</span>
-          </>
+          <span
+            className={
+              state.coverageScore >= 70 ? "text-success" : "text-warning"
+            }
+          >
+            ATS {state.coverageScore}%
+          </span>
         )}
-        <span className="text-success">Ready</span>
+        <span
+          className={
+            state.agentStatus === "done" ? "text-success" : "text-text-muted"
+          }
+        >
+          {state.agentStatus === "running" ? "Working..." : "Ready"}
+        </span>
       </div>
     </footer>
   );

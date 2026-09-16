@@ -2,76 +2,50 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bot,
-  FileText,
-  Code,
-  ClipboardCheck,
-  Settings,
-} from "lucide-react";
-import { useIDEDispatch } from "./ide-context";
+import { Sparkles, FileStack, Database, Settings } from "lucide-react";
 
-const topItems = [
-  { href: "/dashboard", icon: Bot, label: "Agent Workspace", id: "agent" },
-  {
-    href: "/dashboard/resumes",
-    icon: FileText,
-    label: "Resumes",
-    id: "resumes",
-  },
-  { href: "/dashboard/bank", icon: Code, label: "Content Bank", id: "bank" },
-  {
-    href: "/dashboard/history",
-    icon: ClipboardCheck,
-    label: "History",
-    id: "history",
-  },
+const items = [
+  { href: "/dashboard", icon: Sparkles, label: "Agent" },
+  { href: "/dashboard/resumes", icon: FileStack, label: "Resumes" },
+  { href: "/dashboard/bank", icon: Database, label: "Bank" },
 ];
 
 export function ActivityBar() {
   const pathname = usePathname();
-  const dispatch = useIDEDispatch();
 
   return (
-    <aside className="fixed left-0 top-11 bottom-6 w-12 bg-surface-low border-r border-border-muted/30 z-40 flex flex-col items-center justify-between py-2">
-      <nav className="flex flex-col items-center gap-1 w-full">
-        {topItems.map((item) => {
-          const active = pathname === item.href;
+    <aside className="fixed left-0 top-10 bottom-0 w-11 bg-surface-low border-r border-border-muted z-40 flex flex-col items-center justify-between py-2">
+      <nav className="flex flex-col items-center gap-0.5 w-full">
+        {items.map((item) => {
+          const active =
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(item.href);
           return (
             <Link
-              key={item.id}
+              key={item.href}
               href={item.href}
               title={item.label}
-              onClick={() =>
-                dispatch({
-                  type: "OPEN_TAB",
-                  tab: {
-                    id: item.id,
-                    label: item.label,
-                    href: item.href,
-                    closable: item.id !== "agent",
-                  },
-                })
-              }
-              className={`w-9 h-9 rounded flex items-center justify-center transition-colors ${
+              className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all ${
                 active
-                  ? "text-accent bg-surface-high"
-                  : "text-text-secondary hover:text-text-primary hover:bg-surface-mid"
+                  ? "text-accent bg-accent/10"
+                  : "text-text-muted hover:text-text-secondary hover:bg-surface-mid"
               }`}
             >
-              <item.icon size={20} strokeWidth={1.5} />
+              {active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3 rounded-r bg-accent" />
+              )}
+              <item.icon size={16} strokeWidth={active ? 2 : 1.5} />
             </Link>
           );
         })}
       </nav>
-      <div className="flex flex-col items-center gap-1">
-        <button
-          title="Settings"
-          className="w-9 h-9 rounded flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-mid transition-colors"
-        >
-          <Settings size={20} strokeWidth={1.5} />
-        </button>
-      </div>
+      <button
+        title="Settings"
+        className="w-8 h-8 rounded-md flex items-center justify-center text-text-muted hover:text-text-secondary hover:bg-surface-mid transition-all"
+      >
+        <Settings size={16} strokeWidth={1.5} />
+      </button>
     </aside>
   );
 }
