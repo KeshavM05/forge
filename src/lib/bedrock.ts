@@ -11,7 +11,7 @@ const client = new BedrockRuntimeClient({
   },
 });
 
-const MODEL_ID = "us.anthropic.claude-sonnet-4-20250514-v1:0";
+const MODEL_ID = "us.anthropic.claude-sonnet-4-6";
 
 export async function callBedrock(
   systemPrompt: string,
